@@ -3,47 +3,68 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
+using Npgsql;
 
 namespace BreakingScoreBoard.Tests.Integration;
 
 /// <summary>
-/// Test fixture that provides a PostgreSQL container and configured WebApplicationFactory.
+/// Test fixture that provides a PostgreSQL database and configured WebApplicationFactory.
+/// Uses the existing PostgreSQL instance from the dev container.
 /// </summary>
 public class DatabaseFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgresContainer;
-    
-    public DatabaseFixture()
-    {
-        _postgresContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:15-alpine")
-            .WithDatabase("breakingscoreboard_test")
-            .WithUsername("test")
-            .WithPassword("test")
-            .Build();
-    }
+    private const string TestDatabaseName = "breakingscoreboard_test";
+    private const string MasterConnectionString = "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
     
     /// <summary>
     /// Gets the connection string for the test database.
     /// </summary>
-    public string ConnectionString => _postgresContainer.GetConnectionString();
+    public string ConnectionString => $"Host=localhost;Port=5432;Database={TestDatabaseName};Username=postgres;Password=postgres";
     
     /// <summary>
-    /// Initializes the PostgreSQL container.
+    /// Initializes the test database by creating it if it doesn't exist.
     /// </summary>
     public async Task InitializeAsync()
     {
-        await _postgresContainer.StartAsync();
+        // Create the test database if it doesn't exist
+        await using var masterConnection = new NpgsqlConnection(MasterConnectionString);
+        await masterConnection.OpenAsync();
+        
+        // Check if database exists
+        await using var checkCmd = new NpgsqlCommand(
+            $"SELECT 1 FROM pg_database WHERE datname = '{TestDatabaseName}'", 
+            masterConnection);
+        var exists = await checkCmd.ExecuteScalarAsync();
+        
+        if (exists == null)
+        {
+            // Create database
+            await using var createCmd = new NpgsqlCommand(
+                $"CREATE DATABASE {TestDatabaseName}", 
+                masterConnection);
+            await createCmd.ExecuteNonQueryAsync();
+        }
     }
     
     /// <summary>
-    /// Stops and disposes the PostgreSQL container.
+    /// Cleans up the test database.
     /// </summary>
     public async Task DisposeAsync()
     {
-        await _postgresContainer.StopAsync();
-        await _postgresContainer.DisposeAsync();
+        // Drop all tables to clean up for next test run
+        await using var testConnection = new NpgsqlConnection(ConnectionString);
+        await testConnection.OpenAsync();
+        
+        await using var cmd = new NpgsqlCommand(@"
+            DO $$ DECLARE
+                r RECORD;
+            BEGIN
+                FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+                    EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+                END LOOP;
+            END $$;", testConnection);
+        
+        await cmd.ExecuteNonQueryAsync();
     }
     
     /// <summary>
