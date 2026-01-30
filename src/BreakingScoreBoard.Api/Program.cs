@@ -19,6 +19,9 @@ builder.Services.AddScoped<ScoringService>();
 builder.Services.AddScoped<PreSelectionService>();
 builder.Services.AddScoped<BracketService>();
 
+// Add HttpClient for Blazor components to call API
+builder.Services.AddHttpClient();
+
 // Add Blazor Server
 builder.Services.AddRazorPages();
 builder.Services.AddRazorComponents()

@@ -1,83 +1,192 @@
 @page "/organizer/dashboard"
+@using BreakingScoreBoard.Api.Models
+@using BreakingScoreBoard.Api.Contracts.Events
+@using System.Net.Http.Json
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
 
-<PageTitle>Organizer Dashboard - Breaking ScoreBoard</PageTitle>
+<PageTitle>Organizer Dashboard</PageTitle>
 
-<div class="row">
-    <div class="col-md-12">
-        <h1 class="mb-4">Organizer Dashboard</h1>
-        <p class="text-muted">Manage events, categories, and tournament progression</p>
-    </div>
-</div>
+<div class="container-fluid py-4">
+    <h1 class="mb-4 text-primary">
+        <i class="bi bi-kanban"></i> Organizer Dashboard
+    </h1>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">Create New Event</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <p>To create a new event, use the API:</p>
-                    <code>POST /events</code>
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Create New Event</h5>
                 </div>
-                <p class="text-muted">Provide:</p>
-                <ul>
-                    <li>Event title</li>
-                    <li>Event date (DateOnly)</li>
-                    <li>Judge count (3 or 5)</li>
-                    <li>Admin PIN</li>
-                    <li>Judge PIN</li>
-                </ul>
-                <p>See <a href="/swagger">API Documentation</a> for detailed request format</p>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success">@successMessage</div>
+                    }
+
+                    <EditForm Model="@model" OnValidSubmit="@CreateEvent">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Event Title</label>
+                            <InputText @bind-Value="model.Title" class="form-control" />
+                            <ValidationMessage For="@(() => model.Title)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <InputText @bind-Value="model.Location" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Event Date</label>
+                            <InputDate @bind-Value="model.EventDate" class="form-control" />
+                            <ValidationMessage For="@(() => model.EventDate)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Number of Judges</label>
+                            <InputSelect @bind-Value="model.JudgeCount" class="form-select">
+                                <option value="3">3 Judges</option>
+                                <option value="5">5 Judges</option>
+                            </InputSelect>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Admin PIN</label>
+                            <InputText @bind-Value="model.AdminPin" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => model.AdminPin)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Judge PIN</label>
+                            <InputText @bind-Value="model.JudgePin" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => model.JudgePin)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <text> Creating...</text>
+                            }
+                            else
+                            {
+                                <text>Create Event</text>
+                            }
+                        </button>
+                    </EditForm>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">Event Management</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <h6>Available Operations:</h6>
-                    <ul>
-                        <li><strong>Manage Categories:</strong> <code>POST /events/{id}/categories</code></li>
-                        <li><strong>Start Pre-Selection:</strong> <code>POST /categories/{id}/start-preselection</code></li>
-                        <li><strong>Advance Bracket:</strong> <code>POST /categories/{id}/advance-bracket</code></li>
-                        <li><strong>Record Walkovers:</strong> <code>POST /events/{eventId}/battles/{battleId}/walkover</code></li>
-                        <li><strong>View Standings:</strong> <code>GET /public/events/{eventId}/standings</code></li>
-                    </ul>
-                </div>
-                <p><a href="/swagger" class="btn btn-primary">Open API Documentation</a></p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">Tournament Workflow</h5>
+        <div class="col-lg-7">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Quick Links</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/swagger" target="_blank" class="btn btn-outline-primary">
+                            <i class="bi bi-code-square"></i> API Documentation
+                        </a>
+                        <a href="/judge/scoring" class="btn btn-outline-success">
+                            <i class="bi bi-star"></i> Judge Scoring Page
+                        </a>
+                        <a href="/spectator/scoreboard" class="btn btn-outline-info">
+                            <i class="bi bi-tv"></i> Spectator Scoreboard
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <ol>
-                    <li><strong>Create Event</strong> - Define competition name, date, judge count, categories</li>
-                    <li><strong>Register Breakers</strong> - Participants enter their age category</li>
-                    <li><strong>Start Pre-Selection</strong> (if needed) - Overflow registrations compete for spots</li>
-                    <li><strong>Generate Bracket</strong> - System creates Top32/Top16/etc pairings</li>
-                    <li><strong>Judge Scoring</strong> - Judges score battles, system calculates winners</li>
-                    <li><strong>Advance Bracket</strong> - Move winners to next round, create new pairings</li>
-                    <li><strong>Spectator Access</strong> - View live scores and standings (public API)</li>
-                </ol>
-                <p class="text-muted"><small>For full details, see <a href="/swagger">API Documentation</a> and specifications</small></p>
-            </div>
+
+            @if (lastCreatedEvent != null)
+            {
+                <div class="card shadow mt-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Last Created Event</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Event ID:</dt>
+                            <dd class="col-sm-9"><code>@lastCreatedEvent.Id</code></dd>
+                            
+                            <dt class="col-sm-3">Title:</dt>
+                            <dd class="col-sm-9">@lastCreatedEvent.Title</dd>
+                            
+                            <dt class="col-sm-3">Date:</dt>
+                            <dd class="col-sm-9">@lastCreatedEvent.EventDate.ToString("MMMM dd, yyyy")</dd>
+                            
+                            <dt class="col-sm-3">Location:</dt>
+                            <dd class="col-sm-9">@(lastCreatedEvent.Location ?? "Not specified")</dd>
+                            
+                            <dt class="col-sm-3">Registration:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-@(lastCreatedEvent.RegistrationOpen ? "success" : "secondary")">
+                                    @(lastCreatedEvent.RegistrationOpen ? "Open" : "Closed")
+                                </span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </div>
 
 @code {
+    private CreateEventViewModel model = new();
+    private EventResponse? lastCreatedEvent;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    private async Task CreateEvent()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var client = ClientFactory.CreateClient();
+            client.BaseAddress = new Uri(Navigation.BaseUri);
+
+            var requestDto = new
+            {
+                title = model.Title,
+                eventDate = model.EventDate.ToString("yyyy-MM-dd"),
+                location = model.Location,
+                judgeCount = model.JudgeCount,
+                adminPin = model.AdminPin,
+                judgePin = model.JudgePin
+            };
+
+            var response = await client.PostAsJsonAsync("/events", requestDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                lastCreatedEvent = await response.Content.ReadFromJsonAsync<EventResponse>();
+                successMessage = $"Event '{lastCreatedEvent!.Title}' created successfully!";
+                model = new CreateEventViewModel(); // Reset form
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Error: {response.StatusCode} - {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Exception: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
 }
-
-
