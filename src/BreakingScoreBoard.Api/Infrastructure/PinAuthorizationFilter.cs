@@ -10,29 +10,29 @@ public class PinAuthorizationFilter : IAsyncAuthorizationFilter
 {
     private readonly PinAuthService _pinAuthService;
     private readonly bool _requireAdmin;
-    
+
     public PinAuthorizationFilter(PinAuthService pinAuthService, bool requireAdmin = false)
     {
         _pinAuthService = pinAuthService;
         _requireAdmin = requireAdmin;
     }
-    
+
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         var pin = context.HttpContext.Request.Headers["X-Pin"].FirstOrDefault();
-        
+
         if (string.IsNullOrEmpty(pin))
         {
             context.Result = new UnauthorizedObjectResult(new { error = "Missing X-Pin header" });
             return;
         }
-        
+
         // Check for global admin PIN first
         if (_pinAuthService.ValidateGlobalAdminPin(pin))
         {
             return;
         }
-        
+
         // Try to get event ID from route
         if (!context.RouteData.Values.TryGetValue("eventId", out var eventIdObj) ||
             !Guid.TryParse(eventIdObj?.ToString(), out var eventId))
@@ -49,7 +49,7 @@ public class PinAuthorizationFilter : IAsyncAuthorizationFilter
                 return;
             }
         }
-        
+
         bool isValid;
         if (_requireAdmin)
         {
@@ -59,7 +59,7 @@ public class PinAuthorizationFilter : IAsyncAuthorizationFilter
         {
             isValid = await _pinAuthService.ValidateEventPinAsync(eventId, pin);
         }
-        
+
         if (!isValid)
         {
             context.Result = new UnauthorizedObjectResult(new { error = "Invalid PIN" });
@@ -97,14 +97,14 @@ public class RequirePinAttribute : TypeFilterAttribute
 public class PinAuthorizationFilterFactory : IFilterFactory
 {
     private readonly bool _requireAdmin;
-    
+
     public PinAuthorizationFilterFactory(bool requireAdmin = false)
     {
         _requireAdmin = requireAdmin;
     }
-    
+
     public bool IsReusable => false;
-    
+
     public IFilterMetadata CreateInstance(IServiceProvider serviceProvider)
     {
         var pinAuthService = serviceProvider.GetRequiredService<PinAuthService>();

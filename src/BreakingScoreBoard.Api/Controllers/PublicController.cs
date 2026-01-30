@@ -52,7 +52,7 @@ public class PublicController : ControllerBase
             .Include(b => b.Breaker1)
             .Include(b => b.Breaker2)
             .Include(b => b.Scores)
-            .Where(b => b.Category.EventId == eventId && 
+            .Where(b => b.Category.EventId == eventId &&
                        (b.Status == BattleStatus.InProgress || b.Status == BattleStatus.RevealCountdown))
             .AsNoTracking()
             .ToListAsync();
@@ -64,7 +64,7 @@ public class PublicController : ControllerBase
             .Include(b => b.Breaker2)
             .Include(b => b.Winner)
             .Include(b => b.Scores)
-            .Where(b => b.Category.EventId == eventId && 
+            .Where(b => b.Category.EventId == eventId &&
                        (b.Status == BattleStatus.Completed || b.Status == BattleStatus.Walkover))
             .OrderByDescending(b => b.CompletedAt)
             .Take(10)
@@ -182,7 +182,7 @@ public class PublicController : ControllerBase
             Status = battle.Status,
             JudgesScored = judgesScored,
             JudgesTotal = judgeCount,
-            RevealAt = battle.Status == BattleStatus.RevealCountdown 
+            RevealAt = battle.Status == BattleStatus.RevealCountdown
                 ? battle.CompletedAt?.AddSeconds(5) // 5-second countdown
                 : null
         };
@@ -231,7 +231,7 @@ public class PublicController : ControllerBase
 
     private CategoryStandings MapToCategoryStandings(Domain.Entities.AgeCategory category)
     {
-        var currentLevel = category.Battles.Any() 
+        var currentLevel = category.Battles.Any()
             ? category.Battles.Max(b => b.BracketLevel)
             : (BracketLevel?)null;
 
@@ -269,7 +269,7 @@ public class PublicController : ControllerBase
             .SelectMany(b => b.Scores.Where(s => s.BreakerId == registration.BreakerId))
             .ToList();
 
-        decimal? averageScore = allScores.Any() 
+        decimal? averageScore = allScores.Any()
             ? _scoringService.CalculateAverageScore(allScores)
             : null;
 

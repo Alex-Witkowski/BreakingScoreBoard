@@ -19,6 +19,10 @@ builder.Services.AddScoped<ScoringService>();
 builder.Services.AddScoped<PreSelectionService>();
 builder.Services.AddScoped<BracketService>();
 
+// Add HTTP context accessor for correlation IDs
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CorrelationIdAccessor>();
+
 // Add HttpClient for Blazor components to call API
 builder.Services.AddHttpClient();
 
@@ -40,7 +44,7 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1",
         Description = "API for managing breaking (breakdance) battles with age categories, pre-selection rounds, knockout brackets, and judge scoring."
     });
-    
+
     // Add X-Pin header parameter
     options.AddSecurityDefinition("Pin", new OpenApiSecurityScheme
     {
@@ -49,7 +53,7 @@ builder.Services.AddSwaggerGen(options =>
         Name = "X-Pin",
         Description = "PIN for authentication (admin or judge PIN)"
     });
-    
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -64,7 +68,7 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-    
+
     // Include XML comments
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
@@ -78,6 +82,9 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline
 
+// Add correlation ID middleware first
+app.UseMiddleware<CorrelationIdMiddleware>();
+
 // Global exception handler
 app.UseExceptionHandler(errorApp =>
 {
@@ -85,7 +92,7 @@ app.UseExceptionHandler(errorApp =>
     {
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         context.Response.ContentType = "application/json";
-        
+
         var error = ErrorResponse.FromMessage("An unexpected error occurred");
         await context.Response.WriteAsJsonAsync(error);
     });

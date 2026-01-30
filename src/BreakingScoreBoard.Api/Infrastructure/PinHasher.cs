@@ -19,12 +19,12 @@ public static class PinHasher
         {
             throw new ArgumentException("PIN cannot be null or empty", nameof(pin));
         }
-        
+
         var bytes = Encoding.UTF8.GetBytes(pin);
         var hash = SHA256.HashData(bytes);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
-    
+
     /// <summary>
     /// Verifies a PIN against a stored hash.
     /// </summary>
@@ -37,7 +37,7 @@ public static class PinHasher
         {
             return false;
         }
-        
+
         var computedHash = Hash(pin);
         return string.Equals(computedHash, hash, StringComparison.OrdinalIgnoreCase);
     }

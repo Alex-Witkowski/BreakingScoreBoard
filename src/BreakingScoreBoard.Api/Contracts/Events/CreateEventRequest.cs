@@ -13,40 +13,40 @@ public record CreateEventRequest
     [Required]
     [StringLength(200, MinimumLength = 1)]
     public required string Title { get; init; }
-    
+
     /// <summary>
     /// Date of the competition.
     /// </summary>
     [Required]
     public required DateOnly EventDate { get; init; }
-    
+
     /// <summary>
     /// Venue name/address (optional).
     /// </summary>
     [StringLength(500)]
     public string? Location { get; init; }
-    
+
     /// <summary>
     /// Number of judges per battle (3 or 5).
     /// </summary>
     [Required]
     [Range(3, 5)]
     public required int JudgeCount { get; init; }
-    
+
     /// <summary>
     /// Admin PIN for organizer authentication.
     /// </summary>
     [Required]
     [StringLength(20, MinimumLength = 4)]
     public required string AdminPin { get; init; }
-    
+
     /// <summary>
     /// Judge PIN for judge authentication.
     /// </summary>
     [Required]
     [StringLength(20, MinimumLength = 4)]
     public required string JudgePin { get; init; }
-    
+
     /// <summary>
     /// Initial age categories for the event.
     /// </summary>
@@ -64,13 +64,13 @@ public record CreateCategoryRequest
     [Required]
     [StringLength(50, MinimumLength = 1)]
     public required string Name { get; init; }
-    
+
     /// <summary>
     /// Upper age limit (null = no limit, e.g., "Open").
     /// </summary>
     [Range(1, 99)]
     public int? MaxAge { get; init; }
-    
+
     /// <summary>
     /// Target bracket size (8, 16, 32, or 64).
     /// </summary>

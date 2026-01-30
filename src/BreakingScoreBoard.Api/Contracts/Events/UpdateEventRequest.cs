@@ -12,18 +12,18 @@ public record UpdateEventRequest
     /// </summary>
     [StringLength(200, MinimumLength = 1)]
     public string? Title { get; init; }
-    
+
     /// <summary>
     /// Date of the competition.
     /// </summary>
     public DateOnly? EventDate { get; init; }
-    
+
     /// <summary>
     /// Venue name/address.
     /// </summary>
     [StringLength(500)]
     public string? Location { get; init; }
-    
+
     /// <summary>
     /// Whether new registrations are accepted.
     /// </summary>

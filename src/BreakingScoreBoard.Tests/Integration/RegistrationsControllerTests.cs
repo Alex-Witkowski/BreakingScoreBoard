@@ -53,7 +53,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act
         var response = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             request);
 
         // Assert
@@ -90,7 +90,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act
         var response = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             request);
 
         // Assert
@@ -117,7 +117,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act
         var response = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             request);
 
         // Assert
@@ -148,7 +148,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act
         var response = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             request);
 
         // Assert
@@ -175,7 +175,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act
         var response = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             request);
 
         // Assert
@@ -198,7 +198,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act
         var response = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             request);
 
         // Assert
@@ -229,7 +229,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act 1: First registration
         var firstResponse = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             firstRequest);
 
         firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -245,7 +245,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         };
 
         var secondResponse = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{categoryId}/registrations", 
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             secondRequest);
 
         // Assert
@@ -255,7 +255,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         secondRegistration.Should().NotBeNull();
         secondRegistration!.BreakerId.Should().Be(breakerId); // Same breaker ID
         secondRegistration.BreakerName.Should().Be("B-Boy Thunder");
-        
+
         // Verify only one registration exists in database
         var categoryResponse = await _client.GetAsync($"/events/{eventId}/categories/{categoryId}");
         categoryResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -282,12 +282,12 @@ public class RegistrationsControllerTests : IAsyncLifetime
 
         // Act: Register in first category
         var response1 = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{category1Id}/registrations", 
+            $"/events/{eventId}/categories/{category1Id}/registrations",
             request);
 
         // Act: Register in second category
         var response2 = await _client.PostAsJsonAsync(
-            $"/events/{eventId}/categories/{category2Id}/registrations", 
+            $"/events/{eventId}/categories/{category2Id}/registrations",
             request);
 
         // Assert: Both succeed
@@ -307,7 +307,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
     #region Helper Methods
 
     private async Task<(Guid eventId, Guid categoryId)> CreateTestEventAndCategory(
-        int? maxAge = 14, 
+        int? maxAge = 14,
         string categoryName = "U14",
         DateOnly? eventDate = null)
     {

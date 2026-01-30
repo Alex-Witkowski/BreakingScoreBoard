@@ -22,14 +22,14 @@ public class AgeCategoryTests
     {
         // Arrange
         var category = new AgeCategory { MaxAge = maxAge };
-        
+
         // Act
         var result = category.IsValidMaxAge();
-        
+
         // Assert
         result.Should().Be(expected);
     }
-    
+
     [Theory]
     [InlineData(8, true)]
     [InlineData(16, true)]
@@ -47,51 +47,51 @@ public class AgeCategoryTests
     {
         // Arrange
         var category = new AgeCategory { BracketSize = bracketSize };
-        
+
         // Act
         var result = category.IsValidBracketSize();
-        
+
         // Assert
         result.Should().Be(expected);
     }
-    
+
     [Fact]
     public void CurrentPhase_ShouldDefaultToRegistration()
     {
         // Arrange & Act
         var category = new AgeCategory();
-        
+
         // Assert
         category.CurrentPhase.Should().Be(CategoryPhase.Registration);
     }
-    
+
     [Fact]
     public void Name_ShouldDefaultToEmptyString()
     {
         // Arrange & Act
         var category = new AgeCategory();
-        
+
         // Assert
         category.Name.Should().BeEmpty();
     }
-    
+
     [Fact]
     public void Registrations_ShouldBeInitializedAsEmptyList()
     {
         // Arrange & Act
         var category = new AgeCategory();
-        
+
         // Assert
         category.Registrations.Should().NotBeNull();
         category.Registrations.Should().BeEmpty();
     }
-    
+
     [Fact]
     public void Battles_ShouldBeInitializedAsEmptyList()
     {
         // Arrange & Act
         var category = new AgeCategory();
-        
+
         // Assert
         category.Battles.Should().NotBeNull();
         category.Battles.Should().BeEmpty();

@@ -10,13 +10,13 @@ public class PinAuthService
 {
     private readonly BattleDbContext _dbContext;
     private readonly IConfiguration _configuration;
-    
+
     public PinAuthService(BattleDbContext dbContext, IConfiguration configuration)
     {
         _dbContext = dbContext;
         _configuration = configuration;
     }
-    
+
     /// <summary>
     /// Validates the admin PIN from configuration.
     /// </summary>
@@ -27,7 +27,7 @@ public class PinAuthService
         var adminPin = _configuration["AdminPin"];
         return !string.IsNullOrEmpty(adminPin) && adminPin == pin;
     }
-    
+
     /// <summary>
     /// Validates the admin PIN for a specific event.
     /// </summary>
@@ -39,15 +39,15 @@ public class PinAuthService
         var battleEvent = await _dbContext.BattleEvents
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
-        
+
         if (battleEvent is null)
         {
             return false;
         }
-        
+
         return PinHasher.Verify(pin, battleEvent.AdminPinHash);
     }
-    
+
     /// <summary>
     /// Validates the judge PIN for a specific event.
     /// </summary>
@@ -59,15 +59,15 @@ public class PinAuthService
         var battleEvent = await _dbContext.BattleEvents
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
-        
+
         if (battleEvent is null)
         {
             return false;
         }
-        
+
         return PinHasher.Verify(pin, battleEvent.JudgePinHash);
     }
-    
+
     /// <summary>
     /// Validates either admin or judge PIN for a specific event.
     /// </summary>
@@ -79,13 +79,13 @@ public class PinAuthService
         var battleEvent = await _dbContext.BattleEvents
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
-        
+
         if (battleEvent is null)
         {
             return false;
         }
-        
-        return PinHasher.Verify(pin, battleEvent.AdminPinHash) || 
+
+        return PinHasher.Verify(pin, battleEvent.AdminPinHash) ||
                PinHasher.Verify(pin, battleEvent.JudgePinHash);
     }
 }

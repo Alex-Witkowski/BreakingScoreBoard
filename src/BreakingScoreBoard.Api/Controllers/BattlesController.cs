@@ -20,7 +20,7 @@ public class BattlesController : ControllerBase
     private readonly BattleDbContext _dbContext;
     private readonly ScoringService _scoringService;
     private readonly ILogger<BattlesController> _logger;
-    
+
     public BattlesController(
         BattleDbContext dbContext,
         ScoringService scoringService,
@@ -30,7 +30,7 @@ public class BattlesController : ControllerBase
         _scoringService = scoringService;
         _logger = logger;
     }
-    
+
     /// <summary>
     /// Gets all battles for a category.
     /// </summary>
@@ -45,20 +45,20 @@ public class BattlesController : ControllerBase
             .Include(b => b.Breaker2)
             .Include(b => b.Winner)
             .AsNoTracking();
-        
+
         if (categoryId.HasValue)
         {
             query = query.Where(b => b.CategoryId == categoryId.Value);
         }
-        
+
         var battles = await query
             .OrderBy(b => b.BracketLevel)
             .ThenBy(b => b.BracketPosition)
             .ToListAsync();
-        
+
         return Ok(battles.Select(MapToResponse).ToList());
     }
-    
+
     /// <summary>
     /// Gets a specific battle with detailed scoring information.
     /// </summary>
@@ -76,15 +76,15 @@ public class BattlesController : ControllerBase
             .Include(b => b.Scores)
             .AsNoTracking()
             .FirstOrDefaultAsync(b => b.Id == battleId);
-        
+
         if (battle is null)
         {
             return NotFound(ErrorResponse.FromMessage("Battle not found"));
         }
-        
+
         return Ok(MapToDetailResponse(battle));
     }
-    
+
     /// <summary>
     /// Starts a battle (changes status to InProgress).
     /// </summary>
@@ -101,25 +101,25 @@ public class BattlesController : ControllerBase
             .Include(b => b.Breaker1)
             .Include(b => b.Breaker2)
             .FirstOrDefaultAsync(b => b.Id == battleId);
-        
+
         if (battle is null)
         {
             return NotFound(ErrorResponse.FromMessage("Battle not found"));
         }
-        
+
         if (battle.Status != BattleStatus.Scheduled)
         {
             return BadRequest(ErrorResponse.FromMessage($"Battle cannot be started from status {battle.Status}"));
         }
-        
+
         battle.Status = BattleStatus.InProgress;
         await _dbContext.SaveChangesAsync();
-        
+
         _logger.LogInformation("Started battle {BattleId}", battleId);
-        
+
         return Ok(MapToResponse(battle));
     }
-    
+
     /// <summary>
     /// Triggers the reveal countdown for a battle (locks scores).
     /// </summary>
@@ -138,44 +138,44 @@ public class BattlesController : ControllerBase
             .Include(b => b.Scores)
             .Include(b => b.Category)
             .FirstOrDefaultAsync(b => b.Id == battleId);
-        
+
         if (battle is null)
         {
             return NotFound(ErrorResponse.FromMessage("Battle not found"));
         }
-        
+
         if (battle.Status != BattleStatus.InProgress)
         {
             return BadRequest(ErrorResponse.FromMessage($"Reveal can only be triggered from InProgress status"));
         }
-        
+
         // Get expected judge count from event
         var battleEvent = await _dbContext.BattleEvents
             .FirstOrDefaultAsync(e => e.Id == battle.Category.EventId);
-        
+
         var expectedJudgeCount = battleEvent?.JudgeCount ?? 3;
-        
+
         // Check if all judges have scored
         var uniqueJudges = battle.Scores.Select(s => s.JudgeIdentifier).Distinct().Count();
         if (uniqueJudges < expectedJudgeCount)
         {
             return BadRequest(ErrorResponse.FromMessage($"Cannot reveal: only {uniqueJudges} of {expectedJudgeCount} judges have scored"));
         }
-        
+
         // Lock all scores
         foreach (var score in battle.Scores)
         {
             score.IsLocked = true;
         }
-        
+
         battle.Status = BattleStatus.RevealCountdown;
         await _dbContext.SaveChangesAsync();
-        
+
         _logger.LogInformation("Triggered reveal countdown for battle {BattleId}", battleId);
-        
+
         return Ok(MapToDetailResponse(battle));
     }
-    
+
     /// <summary>
     /// Records a walkover (one breaker no-show, organizer selects winner).
     /// </summary>
@@ -196,42 +196,42 @@ public class BattlesController : ControllerBase
             .Include(b => b.Category)
                 .ThenInclude(c => c.Event)
             .FirstOrDefaultAsync(b => b.Id == battleId);
-        
+
         if (battle is null)
         {
             return NotFound(ErrorResponse.FromMessage("Battle not found"));
         }
-        
+
         // FR-027: Validate winner is a participant
         if (request.WinnerId != battle.Breaker1Id && request.WinnerId != battle.Breaker2Id)
         {
             return BadRequest(ErrorResponse.FromMessage("Winner must be one of the battle participants"));
         }
-        
+
         // FR-028: Cannot record walkover if scores already submitted
         if (battle.Scores.Any())
         {
             return BadRequest(ErrorResponse.FromMessage("Cannot record walkover - scores already submitted"));
         }
-        
+
         // Record walkover
         battle.WinnerId = request.WinnerId;
         battle.Status = BattleStatus.Walkover;
         battle.CompletedAt = DateTime.UtcNow;
-        
+
         await _dbContext.SaveChangesAsync();
-        
+
         _logger.LogInformation("Recorded walkover for battle {BattleId}, winner: {WinnerId}", battleId, request.WinnerId);
-        
-        return Ok(new 
-        { 
+
+        return Ok(new
+        {
             message = "Walkover recorded successfully",
             battleId,
             winnerId = request.WinnerId,
             status = BattleStatus.Walkover
         });
     }
-    
+
     private static BattleResponse MapToResponse(Domain.Entities.Battle battle)
     {
         return new BattleResponse
@@ -251,12 +251,12 @@ public class BattlesController : ControllerBase
             CompletedAt = battle.CompletedAt
         };
     }
-    
+
     private BattleDetailResponse MapToDetailResponse(Domain.Entities.Battle battle)
     {
         var breaker1Scores = battle.Scores.Where(s => s.BreakerId == battle.Breaker1Id);
         var breaker2Scores = battle.Scores.Where(s => s.BreakerId == battle.Breaker2Id);
-        
+
         return new BattleDetailResponse
         {
             Id = battle.Id,

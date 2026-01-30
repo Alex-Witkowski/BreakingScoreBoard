@@ -62,8 +62,8 @@ public class RegistrationsController : ControllerBase
         // FR-019: Block registrations if category is not in Registration phase
         if (category.CurrentPhase != CategoryPhase.Registration)
         {
-            return BadRequest(new 
-            { 
+            return BadRequest(new
+            {
                 message = "Registration closed - category has moved to pre-selection or bracket phase",
                 currentPhase = category.CurrentPhase.ToString()
             });
@@ -72,8 +72,8 @@ public class RegistrationsController : ControllerBase
         // FR-002: Validate birth date is in the past
         if (!Breaker.IsValidBirthDate(request.BirthDate))
         {
-            return BadRequest(new 
-            { 
+            return BadRequest(new
+            {
                 message = "Birth date must be in the past",
                 field = "birthDate"
             });
@@ -85,8 +85,8 @@ public class RegistrationsController : ControllerBase
         // FR-002: Validate age fits category
         if (category.MaxAge.HasValue && age > category.MaxAge.Value)
         {
-            return BadRequest(new 
-            { 
+            return BadRequest(new
+            {
                 message = $"Breaker age ({age}) exceeds category maximum age ({category.MaxAge.Value})",
                 age,
                 maxAge = category.MaxAge.Value,
@@ -118,8 +118,8 @@ public class RegistrationsController : ControllerBase
 
         // FR-012: Check for duplicate registration in this category
         var existingRegistration = await _context.Registrations
-            .FirstOrDefaultAsync(r => 
-                r.BreakerId == breaker.Id && 
+            .FirstOrDefaultAsync(r =>
+                r.BreakerId == breaker.Id &&
                 r.CategoryId == categoryId);
 
         Registration registration;
@@ -182,8 +182,8 @@ public class RegistrationsController : ControllerBase
             .Include(r => r.Breaker)
             .Include(r => r.Category)
             .ThenInclude(c => c.Event)
-            .FirstOrDefaultAsync(r => 
-                r.BreakerId == breakerId && 
+            .FirstOrDefaultAsync(r =>
+                r.BreakerId == breakerId &&
                 r.CategoryId == categoryId &&
                 r.Category.EventId == eventId);
 

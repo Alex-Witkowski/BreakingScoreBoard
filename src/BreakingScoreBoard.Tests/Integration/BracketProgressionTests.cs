@@ -47,7 +47,7 @@ public class BracketProgressionTests : IAsyncLifetime
     {
         // Arrange: Create event, category, register 64 breakers, create Top32 battles
         var (eventId, categoryId) = await CreateTestEventAndCategory(bracketSize: 64);
-        
+
         // Register 64 breakers
         var breakerIds = new List<Guid>();
         for (int i = 0; i < 64; i++)

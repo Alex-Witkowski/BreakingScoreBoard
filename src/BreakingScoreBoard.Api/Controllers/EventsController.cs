@@ -19,13 +19,13 @@ public class EventsController : ControllerBase
 {
     private readonly BattleDbContext _dbContext;
     private readonly ILogger<EventsController> _logger;
-    
+
     public EventsController(BattleDbContext dbContext, ILogger<EventsController> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
     }
-    
+
     /// <summary>
     /// Creates a new battle event.
     /// </summary>
@@ -41,13 +41,13 @@ public class EventsController : ControllerBase
         {
             return BadRequest(ErrorResponse.FromMessage("JudgeCount must be 3 or 5"));
         }
-        
+
         // Validate admin and judge PINs are different
         if (request.AdminPin == request.JudgePin)
         {
             return BadRequest(ErrorResponse.FromMessage("AdminPin and JudgePin must be different"));
         }
-        
+
         // Validate categories
         if (request.Categories is not null)
         {
@@ -58,7 +58,7 @@ public class EventsController : ControllerBase
                     return BadRequest(ErrorResponse.FromMessage($"BracketSize must be 8, 16, 32, or 64. Got: {category.BracketSize}"));
                 }
             }
-            
+
             // Check for duplicate category names
             var categoryNames = request.Categories.Select(c => c.Name.ToLowerInvariant()).ToList();
             if (categoryNames.Count != categoryNames.Distinct().Count())
@@ -66,7 +66,7 @@ public class EventsController : ControllerBase
                 return BadRequest(ErrorResponse.FromMessage("Category names must be unique within an event"));
             }
         }
-        
+
         var now = DateTime.UtcNow;
         var battleEvent = new BattleEvent
         {
@@ -81,7 +81,7 @@ public class EventsController : ControllerBase
             CreatedAt = now,
             UpdatedAt = now
         };
-        
+
         // Add categories if provided
         if (request.Categories is not null)
         {
@@ -101,16 +101,16 @@ public class EventsController : ControllerBase
                 battleEvent.Categories.Add(category);
             }
         }
-        
+
         _dbContext.BattleEvents.Add(battleEvent);
         await _dbContext.SaveChangesAsync();
-        
+
         _logger.LogInformation("Created event {EventId} with title {Title}", battleEvent.Id, battleEvent.Title);
-        
+
         var response = MapToResponse(battleEvent);
         return CreatedAtAction(nameof(GetEvent), new { eventId = battleEvent.Id }, response);
     }
-    
+
     /// <summary>
     /// Gets an event by ID.
     /// </summary>
@@ -126,15 +126,15 @@ public class EventsController : ControllerBase
             .ThenInclude(c => c.Registrations)
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
-        
+
         if (battleEvent is null)
         {
             return NotFound(ErrorResponse.FromMessage("Event not found"));
         }
-        
+
         return Ok(MapToResponse(battleEvent));
     }
-    
+
     /// <summary>
     /// Updates an existing event.
     /// </summary>
@@ -152,51 +152,51 @@ public class EventsController : ControllerBase
             .Include(e => e.Categories)
             .ThenInclude(c => c.Registrations)
             .FirstOrDefaultAsync(e => e.Id == eventId);
-        
+
         if (battleEvent is null)
         {
             return NotFound(ErrorResponse.FromMessage("Event not found"));
         }
-        
+
         // Check if any battles have started (FR-013)
         var hasBattles = await _dbContext.Battles
             .AnyAsync(b => b.Category.EventId == eventId);
-        
+
         if (hasBattles)
         {
             return BadRequest(ErrorResponse.FromMessage("Cannot modify event after battles have started"));
         }
-        
+
         // Apply updates
         if (request.Title is not null)
         {
             battleEvent.Title = request.Title;
         }
-        
+
         if (request.EventDate.HasValue)
         {
             battleEvent.EventDate = request.EventDate.Value;
         }
-        
+
         if (request.Location is not null)
         {
             battleEvent.Location = request.Location;
         }
-        
+
         if (request.RegistrationOpen.HasValue)
         {
             battleEvent.RegistrationOpen = request.RegistrationOpen.Value;
         }
-        
+
         battleEvent.UpdatedAt = DateTime.UtcNow;
-        
+
         await _dbContext.SaveChangesAsync();
-        
+
         _logger.LogInformation("Updated event {EventId}", eventId);
-        
+
         return Ok(MapToResponse(battleEvent));
     }
-    
+
     /// <summary>
     /// Regenerates the judge PIN for an event.
     /// </summary>
@@ -212,30 +212,30 @@ public class EventsController : ControllerBase
     {
         var battleEvent = await _dbContext.BattleEvents
             .FirstOrDefaultAsync(e => e.Id == eventId);
-        
+
         if (battleEvent is null)
         {
             return NotFound(ErrorResponse.FromMessage("Event not found"));
         }
-        
+
         var newPinHash = PinHasher.Hash(request.NewJudgePin);
-        
+
         // Ensure new judge PIN is different from admin PIN
         if (newPinHash == battleEvent.AdminPinHash)
         {
             return BadRequest(ErrorResponse.FromMessage("JudgePin cannot be the same as AdminPin"));
         }
-        
+
         battleEvent.JudgePinHash = newPinHash;
         battleEvent.UpdatedAt = DateTime.UtcNow;
-        
+
         await _dbContext.SaveChangesAsync();
-        
+
         _logger.LogInformation("Regenerated judge PIN for event {EventId}", eventId);
-        
+
         return NoContent();
     }
-    
+
     private static EventResponse MapToResponse(BattleEvent battleEvent)
     {
         return new EventResponse

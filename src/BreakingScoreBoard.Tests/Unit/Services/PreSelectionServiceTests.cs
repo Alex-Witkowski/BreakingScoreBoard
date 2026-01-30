@@ -148,7 +148,7 @@ public class PreSelectionServiceTests
         var registrations = CreateTestRegistrations(36);
         registrations[0].Status = RegistrationStatus.Eliminated;
         registrations[1].Status = RegistrationStatus.Disqualified;
-        
+
         var activeCount = registrations.Count(r => r.Status == RegistrationStatus.Active);
         var overflow = 4;
 

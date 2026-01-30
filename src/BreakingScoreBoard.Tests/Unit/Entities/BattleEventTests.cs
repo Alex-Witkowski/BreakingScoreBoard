@@ -21,14 +21,14 @@ public class BattleEventTests
     {
         // Arrange
         var battleEvent = new BattleEvent { JudgeCount = judgeCount };
-        
+
         // Act
         var result = battleEvent.IsValidJudgeCount();
-        
+
         // Assert
         result.Should().Be(expected);
     }
-    
+
     [Fact]
     public void HasDistinctPins_WhenPinsAreDifferent_ShouldReturnTrue()
     {
@@ -38,14 +38,14 @@ public class BattleEventTests
             AdminPinHash = "abc123",
             JudgePinHash = "def456"
         };
-        
+
         // Act
         var result = battleEvent.HasDistinctPins();
-        
+
         // Assert
         result.Should().BeTrue();
     }
-    
+
     [Fact]
     public void HasDistinctPins_WhenPinsAreSame_ShouldReturnFalse()
     {
@@ -55,40 +55,40 @@ public class BattleEventTests
             AdminPinHash = "abc123",
             JudgePinHash = "abc123"
         };
-        
+
         // Act
         var result = battleEvent.HasDistinctPins();
-        
+
         // Assert
         result.Should().BeFalse();
     }
-    
+
     [Fact]
     public void Title_ShouldDefaultToEmptyString()
     {
         // Arrange & Act
         var battleEvent = new BattleEvent();
-        
+
         // Assert
         battleEvent.Title.Should().BeEmpty();
     }
-    
+
     [Fact]
     public void RegistrationOpen_ShouldDefaultToTrue()
     {
         // Arrange & Act
         var battleEvent = new BattleEvent();
-        
+
         // Assert
         battleEvent.RegistrationOpen.Should().BeTrue();
     }
-    
+
     [Fact]
     public void Categories_ShouldBeInitializedAsEmptyList()
     {
         // Arrange & Act
         var battleEvent = new BattleEvent();
-        
+
         // Assert
         battleEvent.Categories.Should().NotBeNull();
         battleEvent.Categories.Should().BeEmpty();

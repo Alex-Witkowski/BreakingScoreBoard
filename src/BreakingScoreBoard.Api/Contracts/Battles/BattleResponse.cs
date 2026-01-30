@@ -11,62 +11,62 @@ public record BattleResponse
     /// Unique identifier.
     /// </summary>
     public required Guid Id { get; init; }
-    
+
     /// <summary>
     /// Category ID.
     /// </summary>
     public required Guid CategoryId { get; init; }
-    
+
     /// <summary>
     /// Bracket level.
     /// </summary>
     public required BracketLevel BracketLevel { get; init; }
-    
+
     /// <summary>
     /// Position in bracket (1-based).
     /// </summary>
     public required int BracketPosition { get; init; }
-    
+
     /// <summary>
     /// First competitor ID.
     /// </summary>
     public required Guid Breaker1Id { get; init; }
-    
+
     /// <summary>
     /// First competitor name.
     /// </summary>
     public required string Breaker1Name { get; init; }
-    
+
     /// <summary>
     /// Second competitor ID.
     /// </summary>
     public required Guid Breaker2Id { get; init; }
-    
+
     /// <summary>
     /// Second competitor name.
     /// </summary>
     public required string Breaker2Name { get; init; }
-    
+
     /// <summary>
     /// Winner ID (null if not completed).
     /// </summary>
     public Guid? WinnerId { get; init; }
-    
+
     /// <summary>
     /// Winner name (null if not completed).
     /// </summary>
     public string? WinnerName { get; init; }
-    
+
     /// <summary>
     /// Battle status.
     /// </summary>
     public required BattleStatus Status { get; init; }
-    
+
     /// <summary>
     /// Whether this is a re-battle.
     /// </summary>
     public required bool IsReBattle { get; init; }
-    
+
     /// <summary>
     /// When battle was completed (if applicable).
     /// </summary>
