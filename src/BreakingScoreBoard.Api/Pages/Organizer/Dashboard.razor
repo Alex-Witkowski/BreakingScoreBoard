@@ -28,7 +28,7 @@
                         <div class="alert alert-success">@successMessage</div>
                     }
 
-                    <EditForm Model="@model" OnValidSubmit="@CreateEvent">
+                    <EditForm Model="@model" OnValidSubmit="@CreateEvent" FormName="createEventForm">
                         <DataAnnotationsValidator />
                         
                         <div class="mb-3">
