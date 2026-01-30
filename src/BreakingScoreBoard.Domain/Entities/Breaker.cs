@@ -25,12 +25,30 @@ public class Breaker
     public bool IsValidBirthDate() => BirthDate < DateOnly.FromDateTime(DateTime.UtcNow);
     
     /// <summary>
+    /// Validates that a birth date is in the past (static version).
+    /// </summary>
+    public static bool IsValidBirthDate(DateOnly birthDate) => birthDate < DateOnly.FromDateTime(DateTime.UtcNow);
+    
+    /// <summary>
     /// Calculates the breaker's age at a given event date.
     /// </summary>
     public int GetAgeAtDate(DateOnly eventDate)
     {
         var age = eventDate.Year - BirthDate.Year;
         if (BirthDate > eventDate.AddYears(-age))
+        {
+            age--;
+        }
+        return age;
+    }
+    
+    /// <summary>
+    /// Calculates age at a given event date from a birth date (static version).
+    /// </summary>
+    public static int GetAgeAtDate(DateOnly birthDate, DateOnly eventDate)
+    {
+        var age = eventDate.Year - birthDate.Year;
+        if (birthDate > eventDate.AddYears(-age))
         {
             age--;
         }

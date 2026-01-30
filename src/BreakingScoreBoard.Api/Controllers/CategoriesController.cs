@@ -1,6 +1,7 @@
 using BreakingScoreBoard.Api.Contracts;
 using BreakingScoreBoard.Api.Contracts.Categories;
 using BreakingScoreBoard.Api.Contracts.Events;
+using BreakingScoreBoard.Api.Contracts.Registrations;
 using BreakingScoreBoard.Api.Infrastructure;
 using BreakingScoreBoard.Domain.Entities;
 using BreakingScoreBoard.Domain.Enums;
@@ -59,14 +60,16 @@ public class CategoriesController : ControllerBase
     /// </summary>
     /// <param name="eventId">The event ID.</param>
     /// <param name="categoryId">The category ID.</param>
-    /// <returns>The category.</returns>
+    /// <returns>The category with registrations.</returns>
     [HttpGet("{categoryId:guid}")]
-    [ProducesResponseType(typeof(CategoryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CategoryDetailResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CategoryResponse>> GetCategory(Guid eventId, Guid categoryId)
+    public async Task<ActionResult<CategoryDetailResponse>> GetCategory(Guid eventId, Guid categoryId)
     {
         var category = await _dbContext.AgeCategories
+            .Include(c => c.Event)
             .Include(c => c.Registrations)
+                .ThenInclude(r => r.Breaker)
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == categoryId && c.EventId == eventId);
         
@@ -75,7 +78,7 @@ public class CategoriesController : ControllerBase
             return NotFound(ErrorResponse.FromMessage("Category not found"));
         }
         
-        return Ok(MapToResponse(category));
+        return Ok(MapToDetailResponse(category));
     }
     
     /// <summary>
@@ -162,6 +165,31 @@ public class CategoriesController : ControllerBase
             CurrentPhase = category.CurrentPhase,
             SortOrder = category.SortOrder,
             RegistrationCount = category.Registrations.Count
+        };
+    }
+
+    private static CategoryDetailResponse MapToDetailResponse(AgeCategory category)
+    {
+        var registrations = category.Registrations
+            .Select(r => new RegistrationResponse
+            {
+                Id = r.Id,
+                BreakerId = r.BreakerId,
+                BreakerName = r.Breaker.Name,
+                Age = r.Breaker.GetAgeAtDate(category.Event.EventDate),
+                Status = r.Status,
+                RegisteredAt = r.RegisteredAt
+            })
+            .OrderBy(r => r.BreakerName)
+            .ToList();
+
+        return new CategoryDetailResponse
+        {
+            Id = category.Id,
+            Name = category.Name,
+            MaxAge = category.MaxAge,
+            BracketSize = category.BracketSize,
+            Registrations = registrations
         };
     }
 }
