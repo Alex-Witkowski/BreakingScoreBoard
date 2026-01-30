@@ -1,0 +1,957 @@
+openapi: 3.0.3
+info:
+  title: BreakingScoreBoard API
+  description: |
+    API for managing breaking (breakdance) battles with age categories, 
+    pre-selection rounds, knockout brackets, and judge scoring.
+    
+    ## Authentication
+    
+    This API uses PIN-based authentication:
+    - **Organizer endpoints**: Require `X-Admin-Pin` header
+    - **Judge endpoints**: Require `X-Judge-Pin` header  
+    - **Public endpoints**: No authentication required
+    
+    PINs are scoped to individual events.
+  version: 1.0.0
+  contact:
+    name: BreakingScoreBoard Team
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: Events
+    description: Battle event management (organizer)
+  - name: Categories
+    description: Age category management (organizer)
+  - name: Registrations
+    description: Breaker registration
+  - name: Battles
+    description: Battle management and scoring
+  - name: Scores
+    description: Judge score submission
+  - name: Public
+    description: Public scoreboard and standings (no auth)
+
+paths:
+  # ============== EVENTS ==============
+  /events:
+    post:
+      tags: [Events]
+      summary: Create a new battle event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /events/{eventId}:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [Events]
+      summary: Get event details
+      operationId: getEvent
+      responses:
+        '200':
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Events]
+      summary: Update event (before battles start)
+      operationId: updateEvent
+      security:
+        - adminPin: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Event updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Cannot modify after battles started (FR-013)
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{eventId}/regenerate-judge-pin:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    post:
+      tags: [Events]
+      summary: Regenerate judge PIN (FR-022)
+      operationId: regenerateJudgePin
+      security:
+        - adminPin: []
+      responses:
+        '200':
+          description: New judge PIN generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  judgePin:
+                    type: string
+                    example: "7294"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============== CATEGORIES ==============
+  /events/{eventId}/categories:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [Categories]
+      summary: List age categories for event
+      operationId: listCategories
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+    post:
+      tags: [Categories]
+      summary: Add age category to event
+      operationId: createCategory
+      security:
+        - adminPin: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Cannot add categories after battles started
+
+  /events/{eventId}/categories/{categoryId}:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/categoryId'
+    get:
+      tags: [Categories]
+      summary: Get category details with registrations
+      operationId: getCategory
+      responses:
+        '200':
+          description: Category with registered breakers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{eventId}/categories/{categoryId}/start-preselection:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/categoryId'
+    post:
+      tags: [Categories]
+      summary: Trigger pre-selection battles if overflow (FR-016, FR-017)
+      operationId: startPreSelection
+      security:
+        - adminPin: []
+      responses:
+        '200':
+          description: Pre-selection started or not needed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  preSelectionNeeded:
+                    type: boolean
+                  overflow:
+                    type: integer
+                    description: Number of breakers over bracket capacity
+                  battlesCreated:
+                    type: integer
+        '400':
+          description: Category not in registration phase
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{eventId}/categories/{categoryId}/advance-bracket:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/categoryId'
+    post:
+      tags: [Categories]
+      summary: Advance winners to next bracket level (FR-008, FR-014)
+      operationId: advanceBracket
+      security:
+        - adminPin: []
+      responses:
+        '200':
+          description: Bracket advanced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fromLevel:
+                    $ref: '#/components/schemas/BracketLevel'
+                  toLevel:
+                    $ref: '#/components/schemas/BracketLevel'
+                  winnersAdvanced:
+                    type: integer
+                  battlesCreated:
+                    type: integer
+                  byeAssigned:
+                    type: boolean
+        '400':
+          description: Not all battles completed at current level
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============== REGISTRATIONS ==============
+  /events/{eventId}/categories/{categoryId}/registrations:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/categoryId'
+    post:
+      tags: [Registrations]
+      summary: Register a breaker for category
+      operationId: registerBreaker
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterBreakerRequest'
+      responses:
+        '201':
+          description: Breaker registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          description: |
+            Validation error:
+            - Age does not fit category (FR-002)
+            - Registration closed (FR-019)
+        '409':
+          description: Breaker already registered (replaced if allowed)
+
+  # ============== BATTLES ==============
+  /events/{eventId}/battles:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [Battles]
+      summary: List all battles for event
+      operationId: listBattles
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: bracketLevel
+          in: query
+          schema:
+            $ref: '#/components/schemas/BracketLevel'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/BattleStatus'
+      responses:
+        '200':
+          description: List of battles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BattleResponse'
+
+  /events/{eventId}/battles/{battleId}:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/battleId'
+    get:
+      tags: [Battles]
+      summary: Get battle details with scores
+      operationId: getBattle
+      responses:
+        '200':
+          description: Battle details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BattleDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{eventId}/battles/{battleId}/start:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/battleId'
+    post:
+      tags: [Battles]
+      summary: Start a scheduled battle (transition to InProgress)
+      operationId: startBattle
+      security:
+        - adminPin: []
+      responses:
+        '200':
+          description: Battle started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BattleResponse'
+        '400':
+          description: Battle not in Scheduled status
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{eventId}/battles/{battleId}/reveal:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/battleId'
+    post:
+      tags: [Battles]
+      summary: Trigger score reveal countdown (FR-023, FR-024)
+      operationId: revealScores
+      security:
+        - adminPin: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                countdownSeconds:
+                  type: integer
+                  default: 5
+                  minimum: 1
+                  maximum: 30
+      responses:
+        '200':
+          description: Countdown started, scores locked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    $ref: '#/components/schemas/BattleStatus'
+                  revealAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Not all judges have scored yet
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{eventId}/battles/{battleId}/walkover:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/battleId'
+    post:
+      tags: [Battles]
+      summary: Mark battle as walkover (FR-027, FR-028)
+      operationId: markWalkover
+      security:
+        - adminPin: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [winnerId]
+              properties:
+                winnerId:
+                  type: string
+                  format: uuid
+                  description: ID of breaker who wins by walkover
+      responses:
+        '200':
+          description: Walkover recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BattleResponse'
+        '400':
+          description: winnerId must be one of the battle participants
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============== SCORES ==============
+  /events/{eventId}/battles/{battleId}/scores:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/battleId'
+    post:
+      tags: [Scores]
+      summary: Submit judge scores for battle (FR-004, FR-005, FR-025)
+      operationId: submitScores
+      security:
+        - judgePin: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitScoresRequest'
+      responses:
+        '200':
+          description: Scores submitted (or updated if resubmission)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  judgeIdentifier:
+                    type: string
+                  breaker1Score:
+                    type: integer
+                  breaker2Score:
+                    type: integer
+                  allJudgesScored:
+                    type: boolean
+        '400':
+          description: |
+            Validation error:
+            - Score out of range 0-100 (FR-007)
+            - In re-battle, scores must differ
+        '403':
+          description: Scores locked after reveal countdown (FR-024)
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============== PUBLIC (NO AUTH) ==============
+  /public/events/{eventId}/scoreboard:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [Public]
+      summary: Get live scoreboard (FR-010)
+      operationId: getScoreboard
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current scoreboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreboardResponse'
+
+  /public/events/{eventId}/standings:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+    get:
+      tags: [Public]
+      summary: Get bracket standings (FR-010)
+      operationId: getStandings
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tournament standings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandingsResponse'
+
+  /public/events/{eventId}/battles/{battleId}/live:
+    parameters:
+      - $ref: '#/components/parameters/eventId'
+      - $ref: '#/components/parameters/battleId'
+    get:
+      tags: [Public]
+      summary: Get live battle state (for countdown display)
+      operationId: getLiveBattle
+      responses:
+        '200':
+          description: Live battle state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveBattleResponse'
+
+components:
+  securitySchemes:
+    adminPin:
+      type: apiKey
+      in: header
+      name: X-Admin-Pin
+      description: Organizer PIN for event management
+    judgePin:
+      type: apiKey
+      in: header
+      name: X-Judge-Pin
+      description: Judge PIN for score submission
+
+  parameters:
+    eventId:
+      name: eventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    categoryId:
+      name: categoryId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    battleId:
+      name: battleId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ===== REQUESTS =====
+    CreateEventRequest:
+      type: object
+      required: [title, eventDate, adminPin, judgeCount]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          example: "Berlin Breaking Championship 2026"
+        eventDate:
+          type: string
+          format: date
+          example: "2026-03-15"
+        location:
+          type: string
+          maxLength: 500
+        adminPin:
+          type: string
+          minLength: 4
+          maxLength: 8
+          example: "1234"
+        judgeCount:
+          type: integer
+          enum: [3, 5]
+        categories:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateCategoryRequest'
+
+    UpdateEventRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        eventDate:
+          type: string
+          format: date
+        location:
+          type: string
+          maxLength: 500
+        registrationOpen:
+          type: boolean
+
+    CreateCategoryRequest:
+      type: object
+      required: [name, bracketSize]
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          example: "U14"
+        maxAge:
+          type: integer
+          minimum: 1
+          maximum: 99
+          nullable: true
+          description: "Null for 'Open' category"
+        bracketSize:
+          type: integer
+          enum: [8, 16, 32, 64]
+          example: 32
+        sortOrder:
+          type: integer
+          default: 0
+
+    RegisterBreakerRequest:
+      type: object
+      required: [name, birthDate]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: "B-Boy Thunder"
+        birthDate:
+          type: string
+          format: date
+          example: "2012-05-20"
+
+    SubmitScoresRequest:
+      type: object
+      required: [breaker1Score, breaker2Score]
+      properties:
+        breaker1Score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        breaker2Score:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    # ===== RESPONSES =====
+    EventResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        eventDate:
+          type: string
+          format: date
+        location:
+          type: string
+        judgeCount:
+          type: integer
+        registrationOpen:
+          type: boolean
+        judgePin:
+          type: string
+          description: Only returned on create
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryResponse'
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        maxAge:
+          type: integer
+          nullable: true
+        bracketSize:
+          type: integer
+        currentPhase:
+          $ref: '#/components/schemas/CategoryPhase'
+        registeredCount:
+          type: integer
+
+    CategoryDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/CategoryResponse'
+        - type: object
+          properties:
+            registrations:
+              type: array
+              items:
+                $ref: '#/components/schemas/RegistrationResponse'
+
+    RegistrationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        breakerId:
+          type: string
+          format: uuid
+        breakerName:
+          type: string
+        age:
+          type: integer
+        status:
+          $ref: '#/components/schemas/RegistrationStatus'
+        registeredAt:
+          type: string
+          format: date-time
+
+    BattleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        bracketLevel:
+          $ref: '#/components/schemas/BracketLevel'
+        bracketPosition:
+          type: integer
+        breaker1:
+          $ref: '#/components/schemas/BreakerSummary'
+        breaker2:
+          $ref: '#/components/schemas/BreakerSummary'
+        status:
+          $ref: '#/components/schemas/BattleStatus'
+        winnerId:
+          type: string
+          format: uuid
+          nullable: true
+        isReBattle:
+          type: boolean
+
+    BattleDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/BattleResponse'
+        - type: object
+          properties:
+            scores:
+              type: array
+              items:
+                $ref: '#/components/schemas/JudgeScoreResponse'
+            breaker1AvgScore:
+              type: number
+              format: float
+              nullable: true
+            breaker2AvgScore:
+              type: number
+              format: float
+              nullable: true
+
+    BreakerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+
+    JudgeScoreResponse:
+      type: object
+      properties:
+        judgeIdentifier:
+          type: string
+        breaker1Score:
+          type: integer
+        breaker2Score:
+          type: integer
+        submittedAt:
+          type: string
+          format: date-time
+        isLocked:
+          type: boolean
+
+    ScoreboardResponse:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventTitle:
+          type: string
+        activeBattles:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveBattleResponse'
+        recentResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/BattleResultResponse'
+
+    LiveBattleResponse:
+      type: object
+      properties:
+        battleId:
+          type: string
+          format: uuid
+        categoryName:
+          type: string
+        bracketLevel:
+          $ref: '#/components/schemas/BracketLevel'
+        breaker1:
+          $ref: '#/components/schemas/BreakerSummary'
+        breaker2:
+          $ref: '#/components/schemas/BreakerSummary'
+        status:
+          $ref: '#/components/schemas/BattleStatus'
+        judgesScored:
+          type: integer
+        judgesTotal:
+          type: integer
+        revealAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: "Countdown target time (if in RevealCountdown status)"
+
+    BattleResultResponse:
+      type: object
+      properties:
+        battleId:
+          type: string
+          format: uuid
+        categoryName:
+          type: string
+        bracketLevel:
+          $ref: '#/components/schemas/BracketLevel'
+        winner:
+          $ref: '#/components/schemas/BreakerSummary'
+        loser:
+          $ref: '#/components/schemas/BreakerSummary'
+        winnerAvgScore:
+          type: number
+          format: float
+          nullable: true
+        loserAvgScore:
+          type: number
+          format: float
+          nullable: true
+        isWalkover:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+
+    StandingsResponse:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryStandings'
+
+    CategoryStandings:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        categoryName:
+          type: string
+        currentPhase:
+          $ref: '#/components/schemas/CategoryPhase'
+        currentLevel:
+          $ref: '#/components/schemas/BracketLevel'
+        standings:
+          type: array
+          items:
+            $ref: '#/components/schemas/BreakerStanding'
+
+    BreakerStanding:
+      type: object
+      properties:
+        breakerId:
+          type: string
+          format: uuid
+        breakerName:
+          type: string
+        currentLevel:
+          $ref: '#/components/schemas/BracketLevel'
+        wins:
+          type: integer
+        losses:
+          type: integer
+        averageScore:
+          type: number
+          format: float
+          nullable: true
+        status:
+          $ref: '#/components/schemas/RegistrationStatus'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    # ===== ENUMS =====
+    CategoryPhase:
+      type: string
+      enum: [Registration, PreSelection, Bracket, Completed]
+
+    BattleStatus:
+      type: string
+      enum: [Scheduled, InProgress, RevealCountdown, Completed, Walkover]
+
+    BracketLevel:
+      type: string
+      enum: [PreSelection, Top64, Top32, Top16, Top8, Top4, Final]
+
+    RegistrationStatus:
+      type: string
+      enum: [Active, Eliminated, Advanced, Disqualified]
