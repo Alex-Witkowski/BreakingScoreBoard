@@ -19,11 +19,11 @@
 
 **Purpose**: Create solution structure and configure development environment
 
-- [ ] T001 Create solution and project structure per quickstart.md
-- [ ] T002 [P] Add NuGet packages to BreakingScoreBoard.Api (Npgsql.EntityFrameworkCore.PostgreSQL, Swashbuckle.AspNetCore)
-- [ ] T003 [P] Add NuGet packages to BreakingScoreBoard.Tests (Testcontainers.PostgreSql, FluentAssertions, Microsoft.AspNetCore.Mvc.Testing)
-- [ ] T004 [P] Configure appsettings.Development.json with PostgreSQL connection string
-- [ ] T005 [P] Enable XML documentation in Api.csproj for Swagger
+- [X] T001 Create solution and project structure per quickstart.md
+- [X] T002 [P] Add NuGet packages to BreakingScoreBoard.Api (Npgsql.EntityFrameworkCore.PostgreSQL, Swashbuckle.AspNetCore)
+- [X] T003 [P] Add NuGet packages to BreakingScoreBoard.Tests (Testcontainers.PostgreSql, FluentAssertions, Microsoft.AspNetCore.Mvc.Testing)
+- [X] T004 [P] Configure appsettings.Development.json with PostgreSQL connection string
+- [X] T005 [P] Enable XML documentation in Api.csproj for Swagger
 
 ---
 
@@ -35,28 +35,28 @@
 
 ### Domain Entities
 
-- [ ] T006 [P] Create CategoryPhase enum in src/BreakingScoreBoard.Domain/Enums/CategoryPhase.cs
-- [ ] T007 [P] Create BattleStatus enum in src/BreakingScoreBoard.Domain/Enums/BattleStatus.cs
-- [ ] T008 [P] Create BracketLevel enum in src/BreakingScoreBoard.Domain/Enums/BracketLevel.cs
-- [ ] T009 [P] Create RegistrationStatus enum in src/BreakingScoreBoard.Domain/Enums/RegistrationStatus.cs
-- [ ] T010 [P] Create BattleEvent entity in src/BreakingScoreBoard.Domain/Entities/BattleEvent.cs
-- [ ] T011 [P] Create AgeCategory entity in src/BreakingScoreBoard.Domain/Entities/AgeCategory.cs
-- [ ] T012 [P] Create Breaker entity in src/BreakingScoreBoard.Domain/Entities/Breaker.cs
-- [ ] T013 [P] Create Registration entity in src/BreakingScoreBoard.Domain/Entities/Registration.cs
-- [ ] T014 [P] Create Battle entity in src/BreakingScoreBoard.Domain/Entities/Battle.cs
-- [ ] T015 [P] Create JudgeScore entity in src/BreakingScoreBoard.Domain/Entities/JudgeScore.cs
+- [X] T006 [P] Create CategoryPhase enum in src/BreakingScoreBoard.Domain/Enums/CategoryPhase.cs
+- [X] T007 [P] Create BattleStatus enum in src/BreakingScoreBoard.Domain/Enums/BattleStatus.cs
+- [X] T008 [P] Create BracketLevel enum in src/BreakingScoreBoard.Domain/Enums/BracketLevel.cs
+- [X] T009 [P] Create RegistrationStatus enum in src/BreakingScoreBoard.Domain/Enums/RegistrationStatus.cs
+- [X] T010 [P] Create BattleEvent entity in src/BreakingScoreBoard.Domain/Entities/BattleEvent.cs
+- [X] T011 [P] Create AgeCategory entity in src/BreakingScoreBoard.Domain/Entities/AgeCategory.cs
+- [X] T012 [P] Create Breaker entity in src/BreakingScoreBoard.Domain/Entities/Breaker.cs
+- [X] T013 [P] Create Registration entity in src/BreakingScoreBoard.Domain/Entities/Registration.cs
+- [X] T014 [P] Create Battle entity in src/BreakingScoreBoard.Domain/Entities/Battle.cs
+- [X] T015 [P] Create JudgeScore entity in src/BreakingScoreBoard.Domain/Entities/JudgeScore.cs
 
 ### Infrastructure
 
-- [ ] T016 Create BattleDbContext with DbSets in src/BreakingScoreBoard.Api/Infrastructure/BattleDbContext.cs
-- [ ] T017 Configure entity relationships and indexes in BattleDbContext.OnModelCreating
-- [ ] T018 Create initial EF Core migration
-- [ ] T019 [P] Create PIN hashing utility in src/BreakingScoreBoard.Api/Infrastructure/PinHasher.cs
-- [ ] T020 [P] Create PinAuthService in src/BreakingScoreBoard.Api/Infrastructure/PinAuthService.cs
-- [ ] T021 Create PinAuthorizationFilter in src/BreakingScoreBoard.Api/Infrastructure/PinAuthorizationFilter.cs
-- [ ] T022 [P] Create ErrorResponse DTO in src/BreakingScoreBoard.Api/Contracts/ErrorResponse.cs
-- [ ] T023 Configure Swagger and exception handling middleware in Program.cs
-- [ ] T024 Create DatabaseFixture for Testcontainers in src/BreakingScoreBoard.Tests/Integration/DatabaseFixture.cs
+- [X] T016 Create BattleDbContext with DbSets in src/BreakingScoreBoard.Api/Infrastructure/BattleDbContext.cs
+- [X] T017 Configure entity relationships and indexes in BattleDbContext.OnModelCreating
+- [X] T018 Create initial EF Core migration
+- [X] T019 [P] Create PIN hashing utility in src/BreakingScoreBoard.Api/Infrastructure/PinHasher.cs
+- [X] T020 [P] Create PinAuthService in src/BreakingScoreBoard.Api/Infrastructure/PinAuthService.cs
+- [X] T021 Create PinAuthorizationFilter in src/BreakingScoreBoard.Api/Infrastructure/PinAuthorizationFilter.cs
+- [X] T022 [P] Create ErrorResponse DTO in src/BreakingScoreBoard.Api/Contracts/ErrorResponse.cs
+- [X] T023 Configure Swagger and exception handling middleware in Program.cs
+- [X] T024 Create DatabaseFixture for Testcontainers in src/BreakingScoreBoard.Tests/Integration/DatabaseFixture.cs
 
 **Checkpoint**: Foundation ready - user story implementation can begin
 
@@ -70,23 +70,23 @@
 
 ### Tests for User Story 1
 
-- [ ] T025 [P] [US1] Unit test BattleEvent validation (judge count 3/5, title required) in src/BreakingScoreBoard.Tests/Unit/Entities/BattleEventTests.cs
-- [ ] T026 [P] [US1] Unit test AgeCategory validation (maxAge, bracketSize power of 2) in src/BreakingScoreBoard.Tests/Unit/Entities/AgeCategoryTests.cs
-- [ ] T027 [P] [US1] Integration test POST /events creates event with categories in src/BreakingScoreBoard.Tests/Integration/EventsControllerTests.cs
-- [ ] T028 [P] [US1] Integration test GET /events/{id} returns event with categories in src/BreakingScoreBoard.Tests/Integration/EventsControllerTests.cs
-- [ ] T029 [P] [US1] Integration test PATCH /events/{id} blocked after battle starts in src/BreakingScoreBoard.Tests/Integration/EventsControllerTests.cs
+- [X] T025 [P] [US1] Unit test BattleEvent validation (judge count 3/5, title required) in src/BreakingScoreBoard.Tests/Unit/Entities/BattleEventTests.cs
+- [X] T026 [P] [US1] Unit test AgeCategory validation (maxAge, bracketSize power of 2) in src/BreakingScoreBoard.Tests/Unit/Entities/AgeCategoryTests.cs
+- [X] T027 [P] [US1] Integration test POST /events creates event with categories in src/BreakingScoreBoard.Tests/Integration/EventsControllerTests.cs
+- [X] T028 [P] [US1] Integration test GET /events/{id} returns event with categories in src/BreakingScoreBoard.Tests/Integration/EventsControllerTests.cs
+- [X] T029 [P] [US1] Integration test PATCH /events/{id} blocked after battle starts in src/BreakingScoreBoard.Tests/Integration/EventsControllerTests.cs
 
 ### Implementation for User Story 1
 
-- [ ] T030 [P] [US1] Create CreateEventRequest DTO in src/BreakingScoreBoard.Api/Contracts/Events/CreateEventRequest.cs
-- [ ] T031 [P] [US1] Create UpdateEventRequest DTO in src/BreakingScoreBoard.Api/Contracts/Events/UpdateEventRequest.cs
-- [ ] T032 [P] [US1] Create EventResponse DTO in src/BreakingScoreBoard.Api/Contracts/Events/EventResponse.cs
-- [ ] T033 [P] [US1] Create CreateCategoryRequest DTO in src/BreakingScoreBoard.Api/Contracts/Categories/CreateCategoryRequest.cs
-- [ ] T034 [P] [US1] Create CategoryResponse DTO in src/BreakingScoreBoard.Api/Contracts/Categories/CategoryResponse.cs
-- [ ] T035 [US1] Implement EventsController with POST, GET, PATCH endpoints in src/BreakingScoreBoard.Api/Controllers/EventsController.cs
-- [ ] T036 [US1] Implement POST /events/{eventId}/regenerate-judge-pin in EventsController
-- [ ] T037 [US1] Implement CategoriesController with GET, POST endpoints in src/BreakingScoreBoard.Api/Controllers/CategoriesController.cs
-- [ ] T038 [US1] Add validation: prevent category/judge count changes after first battle (FR-013)
+- [X] T030 [P] [US1] Create CreateEventRequest DTO in src/BreakingScoreBoard.Api/Contracts/Events/CreateEventRequest.cs
+- [X] T031 [P] [US1] Create UpdateEventRequest DTO in src/BreakingScoreBoard.Api/Contracts/Events/UpdateEventRequest.cs
+- [X] T032 [P] [US1] Create EventResponse DTO in src/BreakingScoreBoard.Api/Contracts/Events/EventResponse.cs
+- [X] T033 [P] [US1] Create CreateCategoryRequest DTO in src/BreakingScoreBoard.Api/Contracts/Categories/CreateCategoryRequest.cs
+- [X] T034 [P] [US1] Create CategoryResponse DTO in src/BreakingScoreBoard.Api/Contracts/Categories/CategoryResponse.cs
+- [X] T035 [US1] Implement EventsController with POST, GET, PATCH endpoints in src/BreakingScoreBoard.Api/Controllers/EventsController.cs
+- [X] T036 [US1] Implement POST /events/{eventId}/regenerate-judge-pin in EventsController
+- [X] T037 [US1] Implement CategoriesController with GET, POST endpoints in src/BreakingScoreBoard.Api/Controllers/CategoriesController.cs
+- [X] T038 [US1] Add validation: prevent category/judge count changes after first battle (FR-013)
 
 **Checkpoint**: User Story 1 complete - Events can be created and queried
 

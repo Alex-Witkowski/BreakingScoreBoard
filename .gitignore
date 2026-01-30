@@ -1,0 +1,70 @@
+# .NET build outputs
+bin/
+obj/
+out/
+publish/
+dist/
+
+# .NET specific
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# Visual Studio
+.vs/
+*.rsuser
+*.vssscc
+*.vspscc
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# VS Code (keep settings, ignore history)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# User secrets
+secrets.json
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+coveragereport/
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# EF Core Migrations local tracking
+*.db
+*.db-shm
+*.db-wal
