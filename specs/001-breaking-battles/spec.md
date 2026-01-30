@@ -127,12 +127,11 @@ Spectators (audience, organizers, external observers) view active battle scores,
 - What happens when a judge tries to resubmit after reveal countdown started? → Rejected; original score stands
 - How does the system handle concurrent submissions from multiple judges scoring the same battle simultaneously? → All accepted independently until reveal lock
 - How are walkovers (breaker no-shows) recorded and handled in bracket progression? → Organizer flags battle as walkover, manually marks winner; no scores recorded; winner advances with "W.O." status
-- What if a battle is canceled after scores are submitted but before bracket advancement?
-- How does the system handle brackets with an odd number of winners (e.g., 9 winners needing 8 Top16 slots)?
-- What happens if the event organizer disqualifies a breaker mid-tournament after they've already won battles?
-- Can a battle be re-scored if judges request correction after aggregate score is published?
-- What if database connection fails during bracket advancement—can the operation be retried safely?
-- How are walkovers (breaker no-shows) recorded and handled in bracket progression?
+- What if a battle is canceled after scores are submitted but before bracket advancement? → Organizer deletes battle; scores are discarded; bracket recalculates from remaining completed battles
+- How does the system handle brackets with an odd number of winners (e.g., 9 winners needing 8 Top16 slots)? → Answered in FR-009: random bye selection
+- What happens if the event organizer disqualifies a breaker mid-tournament after they've already won battles? → Organizer sets breaker status to Disqualified; opponent in next scheduled battle receives walkover; previous results stand (history preserved)
+- Can a battle be re-scored if judges request correction after aggregate score is published? → No; FR-024 locks scores after reveal countdown; organizer must create new "correction battle" if critical error
+- What if database connection fails during bracket advancement—can the operation be retried safely? → Yes; FR-014 ensures idempotent advancement (same result on retry)
 
 ## Requirements *(mandatory)*
 
@@ -165,7 +164,7 @@ Spectators (audience, organizers, external observers) view active battle scores,
 - **FR-012**: System MUST reject duplicate registrations (same breaker in same category) and handle gracefully (replace or error based on state)
 - **FR-013**: System MUST prevent organizer modifications to event age categories or judge count after first battle has been scheduled
 - **FR-014**: System MUST support idempotent bracket advancement (running advancement twice produces same result as running once)
-- **FR-015**: System MUST provide organizer dashboards showing current event state: registered breakers per category, completed/pending battles, bracket progression
+- **FR-015**: System MUST provide organizer dashboards showing current event state: registered breakers per category, completed/pending battles, bracket progression (satisfied by GET /events/{id} with categories + GET /battles?status=Scheduled|Completed)
 
 ### Key Entities
 
