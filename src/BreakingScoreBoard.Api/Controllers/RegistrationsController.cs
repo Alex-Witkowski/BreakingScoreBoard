@@ -59,6 +59,16 @@ public class RegistrationsController : ControllerBase
             return NotFound(new { message = "Category not found" });
         }
 
+        // FR-019: Block registrations if category is not in Registration phase
+        if (category.CurrentPhase != CategoryPhase.Registration)
+        {
+            return BadRequest(new 
+            { 
+                message = "Registration closed - category has moved to pre-selection or bracket phase",
+                currentPhase = category.CurrentPhase.ToString()
+            });
+        }
+
         // FR-002: Validate birth date is in the past
         if (!Breaker.IsValidBirthDate(request.BirthDate))
         {

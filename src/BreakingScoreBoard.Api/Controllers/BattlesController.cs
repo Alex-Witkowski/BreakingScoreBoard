@@ -176,6 +176,62 @@ public class BattlesController : ControllerBase
         return Ok(MapToDetailResponse(battle));
     }
     
+    /// <summary>
+    /// Records a walkover (one breaker no-show, organizer selects winner).
+    /// </summary>
+    /// <param name="battleId">The battle ID.</param>
+    /// <param name="request">Walkover request with winner ID.</param>
+    /// <returns>Result of walkover recording.</returns>
+    [HttpPost("{battleId:guid}/walkover")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RecordWalkover(Guid battleId, [FromBody] WalkoverRequest request)
+    {
+        var battle = await _dbContext.Battles
+            .Include(b => b.Scores)
+            .Include(b => b.Breaker1)
+            .Include(b => b.Breaker2)
+            .Include(b => b.Category)
+                .ThenInclude(c => c.Event)
+            .FirstOrDefaultAsync(b => b.Id == battleId);
+        
+        if (battle is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Battle not found"));
+        }
+        
+        // FR-027: Validate winner is a participant
+        if (request.WinnerId != battle.Breaker1Id && request.WinnerId != battle.Breaker2Id)
+        {
+            return BadRequest(ErrorResponse.FromMessage("Winner must be one of the battle participants"));
+        }
+        
+        // FR-028: Cannot record walkover if scores already submitted
+        if (battle.Scores.Any())
+        {
+            return BadRequest(ErrorResponse.FromMessage("Cannot record walkover - scores already submitted"));
+        }
+        
+        // Record walkover
+        battle.WinnerId = request.WinnerId;
+        battle.Status = BattleStatus.Walkover;
+        battle.CompletedAt = DateTime.UtcNow;
+        
+        await _dbContext.SaveChangesAsync();
+        
+        _logger.LogInformation("Recorded walkover for battle {BattleId}, winner: {WinnerId}", battleId, request.WinnerId);
+        
+        return Ok(new 
+        { 
+            message = "Walkover recorded successfully",
+            battleId,
+            winnerId = request.WinnerId,
+            status = BattleStatus.Walkover
+        });
+    }
+    
     private static BattleResponse MapToResponse(Domain.Entities.Battle battle)
     {
         return new BattleResponse

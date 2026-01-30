@@ -164,20 +164,20 @@
 
 ### Tests for User Story 3
 
-- [ ] T071 [P] [US3] Unit test overflow calculation (registered - bracket size) in src/BreakingScoreBoard.Tests/Unit/Services/PreSelectionServiceTests.cs
-- [ ] T072 [P] [US3] Unit test random selection of 2×overflow breakers in src/BreakingScoreBoard.Tests/Unit/Services/PreSelectionServiceTests.cs
-- [ ] T073 [P] [US3] Integration test POST /start-preselection creates battles in src/BreakingScoreBoard.Tests/Integration/PreSelectionTests.cs
-- [ ] T074 [P] [US3] Integration test no pre-selection when registrations <= bracket size in src/BreakingScoreBoard.Tests/Integration/PreSelectionTests.cs
-- [ ] T075 [P] [US3] Integration test registration blocked after pre-selection starts (FR-019) in src/BreakingScoreBoard.Tests/Integration/PreSelectionTests.cs
+- [X] T071 [P] [US3] Unit test overflow calculation (registered - bracket size) in src/BreakingScoreBoard.Tests/Unit/Services/PreSelectionServiceTests.cs
+- [X] T072 [P] [US3] Unit test random selection of 2×overflow breakers in src/BreakingScoreBoard.Tests/Unit/Services/PreSelectionServiceTests.cs
+- [X] T073 [P] [US3] Integration test POST /start-preselection creates battles in src/BreakingScoreBoard.Tests/Integration/PreSelectionTests.cs
+- [X] T074 [P] [US3] Integration test no pre-selection when registrations <= bracket size in src/BreakingScoreBoard.Tests/Integration/PreSelectionTests.cs
+- [X] T075 [P] [US3] Integration test registration blocked after pre-selection starts (FR-019) in src/BreakingScoreBoard.Tests/Integration/PreSelectionTests.cs
 
 ### Implementation for User Story 3
 
-- [ ] T076 [US3] Create PreSelectionService in src/BreakingScoreBoard.Domain/Services/PreSelectionService.cs
-- [ ] T077 [US3] Implement overflow calculation in PreSelectionService (FR-016)
-- [ ] T078 [US3] Implement random selection of 2×overflow breakers in PreSelectionService (FR-017)
-- [ ] T079 [US3] Implement pre-selection battle creation in PreSelectionService (FR-018)
-- [ ] T080 [US3] Implement POST /categories/{id}/start-preselection in CategoriesController
-- [ ] T081 [US3] Block registrations when category phase changes to PreSelection (FR-019)
+- [X] T076 [US3] Create PreSelectionService in src/BreakingScoreBoard.Domain/Services/PreSelectionService.cs
+- [X] T077 [US3] Implement overflow calculation in PreSelectionService (FR-016)
+- [X] T078 [US3] Implement random selection of 2×overflow breakers in PreSelectionService (FR-017)
+- [X] T079 [US3] Implement pre-selection battle creation in PreSelectionService (FR-018)
+- [X] T080 [US3] Implement POST /categories/{id}/start-preselection in CategoriesController
+- [X] T081 [US3] Block registrations when category phase changes to PreSelection (FR-019)
 
 **Checkpoint**: User Story 3 complete - Pre-selection runs for overflow registrations
 
@@ -191,21 +191,21 @@
 
 ### Tests for User Story 4
 
-- [ ] T082 [P] [US4] Unit test bracket advancement logic in src/BreakingScoreBoard.Tests/Unit/Services/BracketServiceTests.cs
-- [ ] T083 [P] [US4] Unit test bye assignment for odd winners in src/BreakingScoreBoard.Tests/Unit/Services/BracketServiceTests.cs
-- [ ] T084 [P] [US4] Unit test idempotent advancement (FR-014) in src/BreakingScoreBoard.Tests/Unit/Services/BracketServiceTests.cs
-- [ ] T085 [P] [US4] Integration test POST /advance-bracket creates next level battles in src/BreakingScoreBoard.Tests/Integration/BracketProgressionTests.cs
-- [ ] T086 [P] [US4] Integration test walkover handling (FR-027, FR-028) in src/BreakingScoreBoard.Tests/Integration/BracketProgressionTests.cs
+- [X] T082 [P] [US4] Unit test bracket advancement logic in src/BreakingScoreBoard.Tests/Unit/Services/BracketServiceTests.cs
+- [X] T083 [P] [US4] Unit test bye assignment for odd winners in src/BreakingScoreBoard.Tests/Unit/Services/BracketServiceTests.cs
+- [X] T084 [P] [US4] Unit test idempotent advancement (FR-014) in src/BreakingScoreBoard.Tests/Unit/Services/BracketServiceTests.cs
+- [X] T085 [P] [US4] Integration test POST /advance-bracket creates next level battles in src/BreakingScoreBoard.Tests/Integration/BracketProgressionTests.cs
+- [X] T086 [P] [US4] Integration test walkover handling (FR-027, FR-028) in src/BreakingScoreBoard.Tests/Integration/BracketProgressionTests.cs
 
 ### Implementation for User Story 4
 
-- [ ] T087 [US4] Create BracketService in src/BreakingScoreBoard.Domain/Services/BracketService.cs
-- [ ] T088 [US4] Implement winner advancement to next bracket level in BracketService (FR-008)
-- [ ] T089 [US4] Implement bye selection for odd number of winners in BracketService (FR-009)
-- [ ] T090 [US4] Implement idempotent advancement in BracketService (FR-014)
-- [ ] T091 [US4] Implement POST /categories/{id}/advance-bracket in CategoriesController
-- [ ] T092 [US4] Implement POST /battles/{id}/walkover in BattlesController (FR-027)
-- [ ] T093 [US4] Record walkover status without numeric scores (FR-028)
+- [X] T087 [US4] Create BracketService in src/BreakingScoreBoard.Domain/Services/BracketService.cs
+- [X] T088 [US4] Implement winner advancement to next bracket level in BracketService (FR-008)
+- [X] T089 [US4] Implement bye selection for odd number of winners in BracketService (FR-009)
+- [X] T090 [US4] Implement idempotent advancement in BracketService (FR-014)
+- [X] T091 [US4] Implement POST /categories/{id}/advance-bracket in CategoriesController
+- [X] T092 [US4] Implement POST /battles/{id}/walkover in BattlesController (FR-027)
+- [X] T093 [US4] Record walkover status without numeric scores (FR-028)
 
 **Checkpoint**: User Story 4 complete - Brackets progress through knockout rounds
 

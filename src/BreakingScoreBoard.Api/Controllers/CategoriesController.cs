@@ -5,6 +5,7 @@ using BreakingScoreBoard.Api.Contracts.Registrations;
 using BreakingScoreBoard.Api.Infrastructure;
 using BreakingScoreBoard.Domain.Entities;
 using BreakingScoreBoard.Domain.Enums;
+using BreakingScoreBoard.Domain.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,11 +20,19 @@ namespace BreakingScoreBoard.Api.Controllers;
 public class CategoriesController : ControllerBase
 {
     private readonly BattleDbContext _dbContext;
+    private readonly PreSelectionService _preSelectionService;
+    private readonly BracketService _bracketService;
     private readonly ILogger<CategoriesController> _logger;
     
-    public CategoriesController(BattleDbContext dbContext, ILogger<CategoriesController> logger)
+    public CategoriesController(
+        BattleDbContext dbContext,
+        PreSelectionService preSelectionService,
+        BracketService bracketService,
+        ILogger<CategoriesController> logger)
     {
         _dbContext = dbContext;
+        _preSelectionService = preSelectionService;
+        _bracketService = bracketService;
         _logger = logger;
     }
     
@@ -151,6 +160,181 @@ public class CategoriesController : ControllerBase
             nameof(GetCategory), 
             new { eventId, categoryId = category.Id }, 
             MapToResponse(category));
+    }
+    
+    /// <summary>
+    /// Starts pre-selection for a category when registrations exceed bracket size.
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <returns>Result of pre-selection initiation.</returns>
+    [HttpPost("{categoryId:guid}/start-preselection")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> StartPreSelection(Guid eventId, Guid categoryId)
+    {
+        var category = await _dbContext.AgeCategories
+            .Include(c => c.Registrations)
+            .FirstOrDefaultAsync(c => c.Id == categoryId && c.EventId == eventId);
+        
+        if (category is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Category not found"));
+        }
+        
+        // Check if already in pre-selection or later phase
+        if (category.CurrentPhase != CategoryPhase.Registration)
+        {
+            return BadRequest(ErrorResponse.FromMessage("Pre-selection can only be started during registration phase"));
+        }
+        
+        // FR-016: Calculate overflow
+        var activeRegistrationCount = category.Registrations
+            .Count(r => r.Status == RegistrationStatus.Active);
+        
+        var overflow = PreSelectionService.CalculateOverflow(activeRegistrationCount, category.BracketSize);
+        
+        // FR-017: Check if pre-selection is needed
+        if (overflow == 0)
+        {
+            return BadRequest(ErrorResponse.FromMessage($"No pre-selection needed - only {activeRegistrationCount} registrations for {category.BracketSize}-slot bracket"));
+        }
+        
+        // FR-017: Randomly select (2 × overflow) breakers
+        var selectedRegistrations = _preSelectionService.SelectBreakersForPreSelection(
+            category.Registrations, 
+            overflow);
+        
+        // FR-018: Create pre-selection battles
+        var battles = _preSelectionService.CreatePreSelectionBattles(
+            selectedRegistrations,
+            categoryId,
+            overflow);
+        
+        _dbContext.Battles.AddRange(battles);
+        
+        // Update category phase to PreSelection (FR-019: blocks new registrations)
+        category.CurrentPhase = CategoryPhase.PreSelection;
+        
+        await _dbContext.SaveChangesAsync();
+        
+        _logger.LogInformation(
+            "Started pre-selection for category {CategoryId}: {Overflow} overflow, {BattleCount} battles created",
+            categoryId, overflow, battles.Count);
+        
+        return Ok(new 
+        { 
+            message = "Pre-selection started",
+            overflow,
+            battlesCreated = battles.Count,
+            selectedBreakers = selectedRegistrations.Count
+        });
+    }
+    
+    /// <summary>
+    /// Advances bracket to next level after current level battles are completed.
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <returns>Result of bracket advancement.</returns>
+    [HttpPost("{categoryId:guid}/advance-bracket")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AdvanceBracket(Guid eventId, Guid categoryId)
+    {
+        var category = await _dbContext.AgeCategories
+            .Include(c => c.Registrations)
+            .FirstOrDefaultAsync(c => c.Id == categoryId && c.EventId == eventId);
+        
+        if (category is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Category not found"));
+        }
+        
+        // Determine current bracket level from existing battles
+        var currentLevelBattles = await _dbContext.Battles
+            .Include(b => b.Winner)
+            .Where(b => b.CategoryId == categoryId)
+            .OrderByDescending(b => b.BracketLevel)
+            .ToListAsync();
+        
+        if (!currentLevelBattles.Any())
+        {
+            return BadRequest(ErrorResponse.FromMessage("No battles exist yet. Start with pre-selection or initial bracket setup."));
+        }
+        
+        var currentLevel = currentLevelBattles.First().BracketLevel;
+        
+        // Get next bracket level
+        var nextLevel = BracketService.GetNextBracketLevel(currentLevel);
+        if (nextLevel is null)
+        {
+            return BadRequest(ErrorResponse.FromMessage("Already at Final level - cannot advance further"));
+        }
+        
+        // Get battles from current level only
+        var currentRoundBattles = currentLevelBattles
+            .Where(b => b.BracketLevel == currentLevel)
+            .ToList();
+        
+        // FR-014: Idempotent check - if next level battles already exist, return success
+        var existingNextLevelBattles = await _dbContext.Battles
+            .Where(b => b.CategoryId == categoryId && b.BracketLevel == nextLevel)
+            .AnyAsync();
+        
+        if (existingNextLevelBattles)
+        {
+            return Ok(new { message = "Bracket already advanced to next level", alreadyAdvanced = true });
+        }
+        
+        // Check if all battles in current level are completed
+        var incompleteBattles = currentRoundBattles
+            .Where(b => b.Status != BattleStatus.Completed && b.Status != BattleStatus.Walkover)
+            .ToList();
+        
+        if (incompleteBattles.Any())
+        {
+            return BadRequest(ErrorResponse.FromMessage(
+                $"Cannot advance - {incompleteBattles.Count} battles still incomplete in {currentLevel}"));
+        }
+        
+        // FR-008: Extract winners from completed battles
+        var winners = _bracketService.GetWinnersFromBattles(currentRoundBattles);
+        
+        if (!winners.Any())
+        {
+            return BadRequest(ErrorResponse.FromMessage("No completed battles found to advance from"));
+        }
+        
+        // FR-009: Create next round battles (handles bye selection if odd winners)
+        var nextRoundBattles = _bracketService.CreateNextRoundBattles(winners, categoryId, nextLevel.Value);
+        
+        _dbContext.Battles.AddRange(nextRoundBattles);
+        
+        // Update category phase if advancing to bracket phases
+        if (category.CurrentPhase == CategoryPhase.PreSelection && nextLevel == BracketLevel.Top32)
+        {
+            category.CurrentPhase = CategoryPhase.Bracket;
+        }
+        
+        await _dbContext.SaveChangesAsync();
+        
+        _logger.LogInformation(
+            "Advanced bracket for category {CategoryId}: {WinnerCount} winners from {CurrentLevel} to {NextLevel}, {BattleCount} battles created",
+            categoryId, winners.Count, currentLevel, nextLevel, nextRoundBattles.Count);
+        
+        return Ok(new 
+        { 
+            message = "Bracket advanced successfully",
+            fromLevel = currentLevel.ToString(),
+            toLevel = nextLevel.ToString(),
+            winners = winners.Count,
+            battlesCreated = nextRoundBattles.Count
+        });
     }
     
     private static CategoryResponse MapToResponse(AgeCategory category)

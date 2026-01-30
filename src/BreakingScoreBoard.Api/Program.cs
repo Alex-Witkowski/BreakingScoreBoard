@@ -16,6 +16,8 @@ builder.Services.AddScoped<PinAuthService>();
 
 // Add domain services
 builder.Services.AddScoped<ScoringService>();
+builder.Services.AddScoped<PreSelectionService>();
+builder.Services.AddScoped<BracketService>();
 
 // Add controllers
 builder.Services.AddControllers();
