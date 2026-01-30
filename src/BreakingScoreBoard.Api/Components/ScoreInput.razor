@@ -1,0 +1,82 @@
+@namespace BreakingScoreBoard.Api.Components
+@using System.ComponentModel.DataAnnotations
+
+<div class="score-input-container">
+    <label class="form-label">@Label</label>
+    
+    <div class="input-group">
+        <button type="button" class="btn btn-outline-secondary" @onclick="Decrement" disabled="@(CurrentScore <= MinValue)">−</button>
+        <input type="number" 
+               class="form-control form-control-lg text-center" 
+               min="@MinValue" 
+               max="@MaxValue" 
+               @bind="CurrentScore"
+               style="font-size: 1.5rem; font-weight: bold;" />
+        <button type="button" class="btn btn-outline-secondary" @onclick="Increment" disabled="@(CurrentScore >= MaxValue)">+</button>
+    </div>
+    
+    @if (ShowValidation && !IsValid)
+    {
+        <div class="text-danger small mt-1">Score must be between @MinValue and @MaxValue</div>
+    }
+</div>
+
+<style>
+    .score-input-container {
+        margin-bottom: 1rem;
+    }
+    
+    .input-group {
+        margin-top: 0.5rem;
+    }
+    
+    .input-group button {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+    
+    .input-group input {
+        border-left: 0;
+        border-right: 0;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Label { get; set; } = "Score";
+    
+    [Parameter]
+    public int CurrentScore { get; set; } = 0;
+    
+    [Parameter]
+    public EventCallback<int> CurrentScoreChanged { get; set; }
+    
+    [Parameter]
+    public int MinValue { get; set; } = 0;
+    
+    [Parameter]
+    public int MaxValue { get; set; } = 100;
+    
+    [Parameter]
+    public bool ShowValidation { get; set; } = false;
+    
+    private bool IsValid => CurrentScore >= MinValue && CurrentScore <= MaxValue;
+    
+    private async Task Increment()
+    {
+        if (CurrentScore < MaxValue)
+        {
+            CurrentScore++;
+            await CurrentScoreChanged.InvokeAsync(CurrentScore);
+        }
+    }
+    
+    private async Task Decrement()
+    {
+        if (CurrentScore > MinValue)
+        {
+            CurrentScore--;
+            await CurrentScoreChanged.InvokeAsync(CurrentScore);
+        }
+    }
+}

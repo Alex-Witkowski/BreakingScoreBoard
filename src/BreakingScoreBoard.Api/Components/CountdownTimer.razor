@@ -1,0 +1,133 @@
+@namespace BreakingScoreBoard.Api.Components
+@using System.Timers
+
+<div class="countdown-timer">
+    <div class="timer-display">
+        <div class="time-value @GetTimerClass()">
+            @FormatTime(RemainingSeconds)
+        </div>
+        <div class="timer-label">@Label</div>
+    </div>
+</div>
+
+<style>
+    .countdown-timer {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .timer-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .time-value {
+        font-size: 3rem;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        color: #fd7e14;
+        transition: color 0.3s ease;
+    }
+    
+    .time-value.warning {
+        color: #ffc107;
+        animation-name: pulse;
+        animation-duration: 0.5s;
+        animation-iteration-count: infinite;
+    }
+    
+    .time-value.critical {
+        color: #dc3545;
+        animation-name: pulse;
+        animation-duration: 0.3s;
+        animation-iteration-count: infinite;
+    }
+    
+    .timer-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public DateTime? RevealTime { get; set; }
+    
+    [Parameter]
+    public string Label { get; set; } = "Time Remaining";
+    
+    [Parameter]
+    public EventCallback<bool> OnCountdownComplete { get; set; }
+    
+    private int RemainingSeconds { get; set; }
+    private Timer? countdownTimer;
+    private CancellationTokenSource? cancellationTokenSource;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        UpdateRemainingSeconds();
+        StartCountdown();
+    }
+    
+    private void UpdateRemainingSeconds()
+    {
+        if (RevealTime.HasValue)
+        {
+            var remaining = (RevealTime.Value - DateTime.UtcNow).TotalSeconds;
+            RemainingSeconds = remaining > 0 ? (int)Math.Ceiling(remaining) : 0;
+        }
+    }
+    
+    private void StartCountdown()
+    {
+        cancellationTokenSource = new CancellationTokenSource();
+        countdownTimer = new Timer(1000);
+        countdownTimer.Elapsed += async (s, e) =>
+        {
+            UpdateRemainingSeconds();
+            
+            if (RemainingSeconds <= 0)
+            {
+                countdownTimer?.Stop();
+                countdownTimer?.Dispose();
+                await OnCountdownComplete.InvokeAsync(true);
+            }
+            
+            await InvokeAsync(StateHasChanged);
+        };
+        countdownTimer.Start();
+    }
+    
+    private string GetTimerClass()
+    {
+        if (RemainingSeconds <= 3)
+            return "critical";
+        if (RemainingSeconds <= 10)
+            return "warning";
+        return string.Empty;
+    }
+    
+    private string FormatTime(int seconds)
+    {
+        if (seconds < 0)
+            seconds = 0;
+        
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        
+        return $"{minutes:D2}:{secs:D2}";
+    }
+    
+    public void Dispose()
+    {
+        countdownTimer?.Stop();
+        countdownTimer?.Dispose();
+        cancellationTokenSource?.Dispose();
+    }
+}
+

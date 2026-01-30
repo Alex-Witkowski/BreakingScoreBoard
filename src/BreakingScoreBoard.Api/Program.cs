@@ -19,6 +19,11 @@ builder.Services.AddScoped<ScoringService>();
 builder.Services.AddScoped<PreSelectionService>();
 builder.Services.AddScoped<BracketService>();
 
+// Add Blazor Server
+builder.Services.AddRazorPages();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
 // Add controllers
 builder.Services.AddControllers();
 
@@ -92,6 +97,12 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseRouting();
+app.UseAntiforgery();
+
+// Map Blazor
+app.MapRazorPages();
+app.MapRazorComponents<BreakingScoreBoard.Api.Components.App>()
+    .AddInteractiveServerRenderMode();
 
 app.MapControllers();
 

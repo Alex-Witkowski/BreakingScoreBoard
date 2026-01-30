@@ -1,0 +1,31 @@
+@page "/spectator/scoreboard"
+
+<PageTitle>Live Scoreboard - Breaking ScoreBoard</PageTitle>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>Live Scoreboard & Standings</h1>
+        <p class="text-muted">📊 Real-time battle updates and tournament standings</p>
+        
+        <div class="alert alert-info">
+            <h5>View Live Data:</h5>
+            <p>To view live scoreboard and standings, use the public API endpoints:</p>
+            <ul>
+                <li><code>GET /public/events/{eventId}/scoreboard</code> - Active battles + recent results</li>
+                <li><code>GET /public/events/{eventId}/standings</code> - Full tournament standings</li>
+                <li><code>GET /public/events/{eventId}/battles/{battleId}/live</code> - Live battle details</li>
+            </ul>
+            <p>See <a href="/swagger">API Documentation</a> for examples and live testing</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Example: Query Scoreboard</h5>
+            </div>
+            <div class="card-body">
+                <pre><code>curl https://localhost:5001/public/events/{{eventId}}/scoreboard</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+

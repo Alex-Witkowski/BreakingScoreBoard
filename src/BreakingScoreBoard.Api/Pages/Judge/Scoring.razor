@@ -1,0 +1,22 @@
+@page "/judge/scoring"
+
+<PageTitle>Judge Scoring - Breaking ScoreBoard</PageTitle>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>Judge Scoring Interface</h1>
+        <p class="text-muted">⚠️ Judge pages coming soon - Use API documentation for scoring</p>
+        
+        <div class="alert alert-info">
+            <h5>How to Score a Battle:</h5>
+            <ol>
+                <li>Get your Judge PIN from the organizer</li>
+                <li>Use the API endpoint: <code>POST /events/{eventId}/battles/{battleId}/scores</code></li>
+                <li>Provide your judge identifier and scores for both breakers (0-100 each)</li>
+                <li>Submit scores until reveal countdown starts</li>
+            </ol>
+            <p>See <a href="/swagger">API Documentation</a> for more details</p>
+        </div>
+    </div>
+</div>
+

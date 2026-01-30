@@ -1,0 +1,83 @@
+@page "/organizer/dashboard"
+
+<PageTitle>Organizer Dashboard - Breaking ScoreBoard</PageTitle>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">Organizer Dashboard</h1>
+        <p class="text-muted">Manage events, categories, and tournament progression</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Create New Event</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <p>To create a new event, use the API:</p>
+                    <code>POST /events</code>
+                </div>
+                <p class="text-muted">Provide:</p>
+                <ul>
+                    <li>Event title</li>
+                    <li>Event date (DateOnly)</li>
+                    <li>Judge count (3 or 5)</li>
+                    <li>Admin PIN</li>
+                    <li>Judge PIN</li>
+                </ul>
+                <p>See <a href="/swagger">API Documentation</a> for detailed request format</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Event Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6>Available Operations:</h6>
+                    <ul>
+                        <li><strong>Manage Categories:</strong> <code>POST /events/{id}/categories</code></li>
+                        <li><strong>Start Pre-Selection:</strong> <code>POST /categories/{id}/start-preselection</code></li>
+                        <li><strong>Advance Bracket:</strong> <code>POST /categories/{id}/advance-bracket</code></li>
+                        <li><strong>Record Walkovers:</strong> <code>POST /events/{eventId}/battles/{battleId}/walkover</code></li>
+                        <li><strong>View Standings:</strong> <code>GET /public/events/{eventId}/standings</code></li>
+                    </ul>
+                </div>
+                <p><a href="/swagger" class="btn btn-primary">Open API Documentation</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Tournament Workflow</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li><strong>Create Event</strong> - Define competition name, date, judge count, categories</li>
+                    <li><strong>Register Breakers</strong> - Participants enter their age category</li>
+                    <li><strong>Start Pre-Selection</strong> (if needed) - Overflow registrations compete for spots</li>
+                    <li><strong>Generate Bracket</strong> - System creates Top32/Top16/etc pairings</li>
+                    <li><strong>Judge Scoring</strong> - Judges score battles, system calculates winners</li>
+                    <li><strong>Advance Bracket</strong> - Move winners to next round, create new pairings</li>
+                    <li><strong>Spectator Access</strong> - View live scores and standings (public API)</li>
+                </ol>
+                <p class="text-muted"><small>For full details, see <a href="/swagger">API Documentation</a> and specifications</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+}
+
+

@@ -1,0 +1,144 @@
+@namespace BreakingScoreBoard.Api.Components
+@using BreakingScoreBoard.Api.Contracts.Public
+@using BreakingScoreBoard.Domain.Enums
+@using System.Collections.Generic
+
+<div class="bracket-view">
+    <div class="bracket-header">
+        <h4>@Title</h4>
+        <span class="badge bg-info">@CurrentLevel</span>
+    </div>
+    
+    <div class="bracket-container">
+        @if (Standings != null && Standings.Any())
+        {
+            <div class="standings-table">
+                <table class="table table-sm table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 40%">Breaker</th>
+                            <th style="width: 15%">Wins</th>
+                            <th style="width: 15%">Losses</th>
+                            <th style="width: 15%">Avg Score</th>
+                            <th style="width: 15%">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var breaker in Standings.OrderByDescending(s => s.Wins).ThenBy(s => s.Losses))
+                        {
+                            <tr class="@GetStatusClass(breaker.Status.ToString())">
+                                <td>
+                                    <strong>@breaker.BreakerName</strong>
+                                    @if (breaker.CurrentLevel.HasValue)
+                                    {
+                                        <br />
+                                        <small class="text-muted">@breaker.CurrentLevel</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">@breaker.Wins</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger">@breaker.Losses</span>
+                                </td>
+                                <td>
+                                    @if (breaker.AverageScore.HasValue)
+                                    {
+                                        <span>@breaker.AverageScore.Value.ToString("F1")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">--</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @GetStatusBadgeClass(breaker.Status.ToString())">@breaker.Status</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No standings data available.</p>
+        }
+    </div>
+</div>
+
+<style>
+    .bracket-view {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .bracket-header {
+        background: linear-gradient(135deg, #212529 0%, #343a40 100%);
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .bracket-header h4 {
+        margin: 0;
+    }
+    
+    .bracket-container {
+        padding: 1rem;
+    }
+    
+    .standings-table {
+        overflow-x: auto;
+    }
+    
+    .table tr.eliminated {
+        opacity: 0.6;
+    }
+    
+    .table tr.active {
+        background-color: #f0f8ff;
+    }
+    
+    .table tr.champion {
+        background-color: #fffacd;
+        font-weight: bold;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Bracket Standings";
+    
+    [Parameter]
+    public string? CurrentLevel { get; set; }
+    
+    [Parameter]
+    public List<BreakerStanding>? Standings { get; set; }
+    
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Eliminated" => "eliminated",
+            "Active" => "active",
+            "Champion" => "champion",
+            _ => ""
+        };
+    }
+    
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Eliminated" => "bg-secondary",
+            "Active" => "bg-success",
+            "Champion" => "bg-warning",
+            _ => "bg-info"
+        };
+    }
+}

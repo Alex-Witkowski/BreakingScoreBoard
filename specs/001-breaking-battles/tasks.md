@@ -243,12 +243,12 @@
 
 **Purpose**: Server-rendered Blazor pages for organizer, judge, and spectator interfaces
 
-- [ ] T106 [P] Create OrganizerDashboard page in src/BreakingScoreBoard.Api/Pages/Organizer/Dashboard.razor
-- [ ] T107 [P] Create JudgeScoringPage in src/BreakingScoreBoard.Api/Pages/Judge/Scoring.razor
-- [ ] T108 [P] Create SpectatorScoreboard page in src/BreakingScoreBoard.Api/Pages/Spectator/Scoreboard.razor
-- [ ] T109 Create ScoreInput component in src/BreakingScoreBoard.Api/Components/ScoreInput.razor
-- [ ] T110 Create BracketView component in src/BreakingScoreBoard.Api/Components/BracketView.razor
-- [ ] T111 Create CountdownTimer component with SignalR in src/BreakingScoreBoard.Api/Components/CountdownTimer.razor
+- [x] T106 [P] Create OrganizerDashboard page in src/BreakingScoreBoard.Api/Pages/Organizer/Dashboard.razor
+- [x] T107 [P] Create JudgeScoringPage in src/BreakingScoreBoard.Api/Pages/Judge/Scoring.razor
+- [x] T108 [P] Create SpectatorScoreboard page in src/BreakingScoreBoard.Api/Pages/Spectator/Scoreboard.razor
+- [x] T109 Create ScoreInput component in src/BreakingScoreBoard.Api/Components/ScoreInput.razor
+- [x] T110 Create BracketView component in src/BreakingScoreBoard.Api/Components/BracketView.razor
+- [x] T111 Create CountdownTimer component with SignalR in src/BreakingScoreBoard.Api/Components/CountdownTimer.razor
 
 ---
 
