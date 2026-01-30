@@ -100,29 +100,29 @@
 
 ### Tests for User Story 2
 
-- [ ] T039 [P] [US2] Unit test score calculation (average of judge scores) in src/BreakingScoreBoard.Tests/Unit/Services/ScoringServiceTests.cs
-- [ ] T040 [P] [US2] Unit test tie detection triggers re-battle in src/BreakingScoreBoard.Tests/Unit/Services/ScoringServiceTests.cs
-- [ ] T041 [P] [US2] Unit test forced differentiation in re-battles in src/BreakingScoreBoard.Tests/Unit/Services/ScoringServiceTests.cs
-- [ ] T042 [P] [US2] Integration test POST /scores submits judge scores in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
-- [ ] T043 [P] [US2] Integration test score resubmission before reveal allowed in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
-- [ ] T044 [P] [US2] Integration test score locked after reveal countdown in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
-- [ ] T045 [P] [US2] Integration test score validation (0-100 range) in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
+- [X] T039 [P] [US2] Unit test score calculation (average of judge scores) in src/BreakingScoreBoard.Tests/Unit/Services/ScoringServiceTests.cs
+- [X] T040 [P] [US2] Unit test tie detection triggers re-battle in src/BreakingScoreBoard.Tests/Unit/Services/ScoringServiceTests.cs
+- [X] T041 [P] [US2] Unit test forced differentiation in re-battles in src/BreakingScoreBoard.Tests/Unit/Services/ScoringServiceTests.cs
+- [X] T042 [P] [US2] Integration test POST /scores submits judge scores in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
+- [X] T043 [P] [US2] Integration test score resubmission before reveal allowed in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
+- [X] T044 [P] [US2] Integration test score locked after reveal countdown in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
+- [X] T045 [P] [US2] Integration test score validation (0-100 range) in src/BreakingScoreBoard.Tests/Integration/ScoresControllerTests.cs
 
 ### Implementation for User Story 2
 
-- [ ] T046 [P] [US2] Create ScoringService in src/BreakingScoreBoard.Domain/Services/ScoringService.cs
-- [ ] T047 [P] [US2] Create SubmitScoresRequest DTO in src/BreakingScoreBoard.Api/Contracts/Scores/SubmitScoresRequest.cs
-- [ ] T048 [P] [US2] Create BattleResponse DTO in src/BreakingScoreBoard.Api/Contracts/Battles/BattleResponse.cs
-- [ ] T049 [P] [US2] Create BattleDetailResponse DTO in src/BreakingScoreBoard.Api/Contracts/Battles/BattleDetailResponse.cs
-- [ ] T050 [P] [US2] Create JudgeScoreResponse DTO in src/BreakingScoreBoard.Api/Contracts/Scores/JudgeScoreResponse.cs
-- [ ] T051 [US2] Implement BattlesController with GET /battles, GET /battles/{id} in src/BreakingScoreBoard.Api/Controllers/BattlesController.cs
-- [ ] T052 [US2] Implement POST /battles/{id}/start in BattlesController
-- [ ] T053 [US2] Implement POST /battles/{id}/reveal with countdown logic in BattlesController
-- [ ] T054 [US2] Implement ScoresController with POST /scores in src/BreakingScoreBoard.Api/Controllers/ScoresController.cs
-- [ ] T055 [US2] Implement winner calculation and tie detection in ScoringService
-- [ ] T056 [US2] Implement automatic re-battle creation on tie in ScoringService
-- [ ] T057 [US2] Add score locking after reveal countdown (FR-024)
-- [ ] T058 [US2] Add audit logging for all score submissions (FR-011)
+- [X] T046 [P] [US2] Create ScoringService in src/BreakingScoreBoard.Domain/Services/ScoringService.cs
+- [X] T047 [P] [US2] Create SubmitScoresRequest DTO in src/BreakingScoreBoard.Api/Contracts/Scores/SubmitScoresRequest.cs
+- [X] T048 [P] [US2] Create BattleResponse DTO in src/BreakingScoreBoard.Api/Contracts/Battles/BattleResponse.cs
+- [X] T049 [P] [US2] Create BattleDetailResponse DTO in src/BreakingScoreBoard.Api/Contracts/Battles/BattleDetailResponse.cs
+- [X] T050 [P] [US2] Create JudgeScoreResponse DTO in src/BreakingScoreBoard.Api/Contracts/Scores/JudgeScoreResponse.cs
+- [X] T051 [US2] Implement BattlesController with GET /battles, GET /battles/{id} in src/BreakingScoreBoard.Api/Controllers/BattlesController.cs
+- [X] T052 [US2] Implement POST /battles/{id}/start in BattlesController
+- [X] T053 [US2] Implement POST /battles/{id}/reveal with countdown logic in BattlesController
+- [X] T054 [US2] Implement ScoresController with POST /scores in src/BreakingScoreBoard.Api/Controllers/ScoresController.cs
+- [X] T055 [US2] Implement winner calculation and tie detection in ScoringService
+- [X] T056 [US2] Implement automatic re-battle creation on tie in ScoringService
+- [X] T057 [US2] Add score locking after reveal countdown (FR-024)
+- [X] T058 [US2] Add audit logging for all score submissions (FR-011)
 
 **Checkpoint**: User Story 2 complete - Judges can score battles and winners are determined
 

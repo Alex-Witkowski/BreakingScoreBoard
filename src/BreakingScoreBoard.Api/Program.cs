@@ -1,6 +1,7 @@
 using System.Reflection;
 using BreakingScoreBoard.Api.Contracts;
 using BreakingScoreBoard.Api.Infrastructure;
+using BreakingScoreBoard.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -12,6 +13,9 @@ builder.Services.AddDbContext<BattleDbContext>(options =>
 
 // Add PIN authentication service
 builder.Services.AddScoped<PinAuthService>();
+
+// Add domain services
+builder.Services.AddScoped<ScoringService>();
 
 // Add controllers
 builder.Services.AddControllers();
