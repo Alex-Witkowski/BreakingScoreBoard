@@ -195,6 +195,8 @@ public class BracketProgressionTests : IAsyncLifetime
         // Submit scores
         var scoresRequest = new SubmitScoresRequest
         {
+            BattleId = battleId,
+            JudgeIdentifier = "judge-1",
             Breaker1Score = 85,
             Breaker2Score = 75
         };

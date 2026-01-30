@@ -219,21 +219,21 @@
 
 ### Tests for User Story 6
 
-- [ ] T094 [P] [US6] Integration test GET /public/scoreboard returns active battles in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
-- [ ] T095 [P] [US6] Integration test GET /public/standings returns bracket state in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
-- [ ] T096 [P] [US6] Integration test GET /public/battles/{id}/live returns countdown in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
-- [ ] T097 [P] [US6] Integration test public endpoints require no authentication in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
+- [X] T094 [P] [US6] Integration test GET /public/scoreboard returns active battles in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
+- [X] T095 [P] [US6] Integration test GET /public/standings returns bracket state in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
+- [X] T096 [P] [US6] Integration test GET /public/battles/{id}/live returns countdown in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
+- [X] T097 [P] [US6] Integration test public endpoints require no authentication in src/BreakingScoreBoard.Tests/Integration/PublicControllerTests.cs
 
 ### Implementation for User Story 6
 
-- [ ] T098 [P] [US6] Create ScoreboardResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/ScoreboardResponse.cs
-- [ ] T099 [P] [US6] Create StandingsResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/StandingsResponse.cs
-- [ ] T100 [P] [US6] Create LiveBattleResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/LiveBattleResponse.cs
-- [ ] T101 [P] [US6] Create BattleResultResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/BattleResultResponse.cs
-- [ ] T102 [P] [US6] Create CategoryStandings DTO in src/BreakingScoreBoard.Api/Contracts/Public/CategoryStandings.cs
-- [ ] T103 [P] [US6] Create BreakerStanding DTO in src/BreakingScoreBoard.Api/Contracts/Public/BreakerStanding.cs
-- [ ] T104 [US6] Implement PublicController with scoreboard, standings, live endpoints in src/BreakingScoreBoard.Api/Controllers/PublicController.cs
-- [ ] T105 [US6] Ensure public endpoints skip PIN authentication
+- [X] T098 [P] [US6] Create ScoreboardResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/ScoreboardResponse.cs
+- [X] T099 [P] [US6] Create StandingsResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/StandingsResponse.cs
+- [X] T100 [P] [US6] Create LiveBattleResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/LiveBattleResponse.cs
+- [X] T101 [P] [US6] Create BattleResultResponse DTO in src/BreakingScoreBoard.Api/Contracts/Public/BattleResultResponse.cs
+- [X] T102 [P] [US6] Create CategoryStandings DTO in src/BreakingScoreBoard.Api/Contracts/Public/CategoryStandings.cs
+- [X] T103 [P] [US6] Create BreakerStanding DTO in src/BreakingScoreBoard.Api/Contracts/Public/BreakerStanding.cs
+- [X] T104 [US6] Implement PublicController with scoreboard, standings, live endpoints in src/BreakingScoreBoard.Api/Controllers/PublicController.cs
+- [X] T105 [US6] Ensure public endpoints skip PIN authentication
 
 **Checkpoint**: User Story 6 complete - Spectators can view live scores and standings
 
