@@ -136,21 +136,21 @@
 
 ### Tests for User Story 5
 
-- [ ] T059 [P] [US5] Unit test age calculation from birth date in src/BreakingScoreBoard.Tests/Unit/Entities/BreakerTests.cs
-- [ ] T060 [P] [US5] Unit test age category validation (age fits maxAge) in src/BreakingScoreBoard.Tests/Unit/Entities/RegistrationTests.cs
-- [ ] T061 [P] [US5] Integration test POST /registrations creates registration in src/BreakingScoreBoard.Tests/Integration/RegistrationsControllerTests.cs
-- [ ] T062 [P] [US5] Integration test registration rejected if age doesn't fit category in src/BreakingScoreBoard.Tests/Integration/RegistrationsControllerTests.cs
-- [ ] T063 [P] [US5] Integration test duplicate registration replaces existing in src/BreakingScoreBoard.Tests/Integration/RegistrationsControllerTests.cs
+- [X] T059 [P] [US5] Unit test age calculation from birth date in src/BreakingScoreBoard.Tests/Unit/Entities/BreakerTests.cs
+- [X] T060 [P] [US5] Unit test age category validation (age fits maxAge) in src/BreakingScoreBoard.Tests/Unit/Entities/RegistrationTests.cs
+- [X] T061 [P] [US5] Integration test POST /registrations creates registration in src/BreakingScoreBoard.Tests/Integration/RegistrationsControllerTests.cs
+- [X] T062 [P] [US5] Integration test registration rejected if age doesn't fit category in src/BreakingScoreBoard.Tests/Integration/RegistrationsControllerTests.cs
+- [X] T063 [P] [US5] Integration test duplicate registration replaces existing in src/BreakingScoreBoard.Tests/Integration/RegistrationsControllerTests.cs
 
 ### Implementation for User Story 5
 
-- [ ] T064 [P] [US5] Create RegisterBreakerRequest DTO in src/BreakingScoreBoard.Api/Contracts/Registrations/RegisterBreakerRequest.cs
-- [ ] T065 [P] [US5] Create RegistrationResponse DTO in src/BreakingScoreBoard.Api/Contracts/Registrations/RegistrationResponse.cs
-- [ ] T066 [P] [US5] Create CategoryDetailResponse DTO in src/BreakingScoreBoard.Api/Contracts/Categories/CategoryDetailResponse.cs
-- [ ] T067 [US5] Implement RegistrationsController with POST endpoint in src/BreakingScoreBoard.Api/Controllers/RegistrationsController.cs
-- [ ] T068 [US5] Add age validation logic (breaker age must fit category maxAge) (FR-002)
-- [ ] T069 [US5] Implement duplicate registration handling (idempotent replace) (FR-012)
-- [ ] T070 [US5] Update CategoriesController GET to include registrations
+- [X] T064 [P] [US5] Create RegisterBreakerRequest DTO in src/BreakingScoreBoard.Api/Contracts/Registrations/RegisterBreakerRequest.cs
+- [X] T065 [P] [US5] Create RegistrationResponse DTO in src/BreakingScoreBoard.Api/Contracts/Registrations/RegistrationResponse.cs
+- [X] T066 [P] [US5] Create CategoryDetailResponse DTO in src/BreakingScoreBoard.Api/Contracts/Categories/CategoryDetailResponse.cs
+- [X] T067 [US5] Implement RegistrationsController with POST endpoint in src/BreakingScoreBoard.Api/Controllers/RegistrationsController.cs
+- [X] T068 [US5] Add age validation logic (breaker age must fit category maxAge) (FR-002)
+- [X] T069 [US5] Implement duplicate registration handling (idempotent replace) (FR-012)
+- [X] T070 [US5] Update CategoriesController GET to include registrations
 
 **Checkpoint**: User Story 5 complete - Breakers can register for categories
 
