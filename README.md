@@ -3,6 +3,7 @@
 > **A comprehensive breaking (breakdance) battle management system with knockout brackets, judge scoring, and pre-selection rounds.**
 
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/9.0)
+[![MudBlazor](https://img.shields.io/badge/MudBlazor-8.15.0-594ae2)](https://mudblazor.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-336791)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -11,13 +12,14 @@
 ## Features
 
 - **📅 Event Management**: Create and manage breaking battle events with multiple age categories
-- **👥 Breaker Registration**: Register participants with age-based categories (U14, U16, U18, Open)
+- **👥 Breaker Registration**: Register participants with age-based categories (U8, U10, U14, U16, U18, Open)
 - **🏆 Tournament Brackets**: Automatic knockout bracket generation with pre-selection rounds
 - **⚖️ Judge Scoring**: Multi-judge scoring (3 or 5 judges) with average calculation and forced differentiation
 - **📊 Live Scoreboard**: Real-time battle results and standings for spectators
 - **🔐 PIN Authentication**: Secure admin and judge access without complex user accounts
 - **🎯 Battle Flow**: In-progress tracking, reveal countdowns, walkover support
-- **📱 Blazor UI**: Interactive web interface for organizers, judges, and spectators
+- **🎨 Modern UI**: Material Design interface with MudBlazor components
+- **📱 Responsive Design**: Mobile-first Blazor Server interface for organizers, judges, and spectators
 
 ---
 
@@ -33,8 +35,8 @@
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd dotnet-postgres
+git clone https://github.com/Alex-Witkowski/BreakingScoreBoard.git
+cd BreakingScoreBoard
 
 # Restore dependencies
 dotnet restore
@@ -47,13 +49,15 @@ dotnet ef database update
 dotnet run
 ```
 
-The API will be available at:
-- **API**: `http://localhost:8080`
-- **Swagger UI**: `http://localhost:8080/swagger`
+The application will be available at:
+- **Web Application**: `http://localhost:5296` (or `https://localhost:7197`)
+- **Swagger UI**: `http://localhost:5296/swagger`
 - **Blazor Pages**:
-  - Organizer Dashboard: `http://localhost:8080/organizer/dashboard`
-  - Judge Scoring: `http://localhost:8080/judge/scoring`
-  - Spectator Scoreboard: `http://localhost:8080/spectator/scoreboard`
+  - Organizer Dashboard: `http://localhost:5296/organizer/dashboard`
+  - Event Details: `http://localhost:5296/events/detail`
+  - Breaker Registration: `http://localhost:5296/events/register`
+  - Judge Scoring: `http://localhost:5296/judge/scoring`
+  - Spectator Scoreboard: `http://localhost:5296/spectator/scoreboard`
 
 ### Running Tests
 
@@ -115,10 +119,10 @@ The API uses PIN-based authentication via the `X-Pin` header:
 
 ```bash
 # Admin operations
-curl -H "X-Pin: your-admin-pin" -X DELETE http://localhost:8080/events/{id}
+curl -H "X-Pin: your-admin-pin" -X DELETE http://localhost:5296/events/{id}
 
 # Judge score submission
-curl -H "X-Pin: your-judge-pin" -X POST http://localhost:8080/scores \
+curl -H "X-Pin: your-judge-pin" -X POST http://localhost:5296/scores \
   -H "Content-Type: application/json" \
   -d '{"battleId":"...","judgeIdentifier":"J1","breaker1Score":85,"breaker2Score":90}'
 ```
@@ -164,7 +168,13 @@ BreakingScoreBoard/
 │   │   ├── Contracts/                  # DTOs (requests/responses)
 │   │   ├── Infrastructure/             # DbContext, middleware, auth
 │   │   ├── Pages/                      # Blazor pages
+│   │   │   ├── Events/                 # Event management pages
+│   │   │   ├── Judge/                  # Judge scoring pages
+│   │   │   ├── Organizer/              # Organizer dashboard
+│   │   │   └── Spectator/              # Public scoreboard
 │   │   ├── Components/                 # Blazor components
+│   │   ├── Services/                   # API client services
+│   │   ├── Models/                     # View models
 │   │   └── Program.cs                  # Application startup
 │   │
 │   └── BreakingScoreBoard.Tests/      # Test suite
@@ -178,6 +188,7 @@ BreakingScoreBoard/
 ### Technology Stack
 
 - **Framework**: ASP.NET Core 9.0 (Web API + Blazor Server)
+- **UI Library**: MudBlazor 8.15.0 (Material Design components)
 - **ORM**: Entity Framework Core 9.0
 - **Database**: PostgreSQL 15+
 - **Testing**: xUnit + FluentAssertions + WebApplicationFactory
@@ -218,7 +229,8 @@ Update `appsettings.Development.json`:
 |----------|-------------|---------|
 | `ConnectionStrings__DefaultConnection` | PostgreSQL connection string | See appsettings.json |
 | `ASPNETCORE_ENVIRONMENT` | Environment (Development/Production) | Development |
-| `ASPNETCORE_URLS` | Listen URLs | `http://+:8080` |
+| `ASPNETCORE_URLS` | Listen URLs | `http://localhost:5296` |
+| `ApiBaseUrl` | Base URL for API client services | `http://localhost:5296` |
 
 ---
 
@@ -269,7 +281,7 @@ docker build -t breakingscoreboard-api .
 # Run with PostgreSQL
 docker run -d \
   -e ConnectionStrings__DefaultConnection="Host=db;..." \
-  -p 8080:8080 \
+  -p 5296:8080 \
   breakingscoreboard-api
 ```
 
@@ -299,11 +311,43 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## Implementation Status
+
+### ✅ Completed
+- Full REST API with all endpoints
+- PostgreSQL database with Entity Framework Core
+- Domain services (Scoring, PreSelection, Bracket)
+- PIN-based authentication
+- Basic Blazor UI with MudBlazor integration
+- Organizer Dashboard (event creation, listing, management)
+- Event Details page with category management
+- Breaker registration interface
+- Judge scoring interface
+- Spectator scoreboard
+
+### 🚧 In Progress
+- Enhanced UI components and interactions
+- Real-time updates for spectator view
+- Advanced bracket visualization
+- Comprehensive error handling and validation
+- Mobile responsive design optimization
+
+### 📋 Planned
+- Battle management enhancements (bulk operations)
+- Advanced filtering and search capabilities
+- Export functionality (PDF, CSV)
+- Email notifications
+- Multi-language support
+
+---
+
 ## Support
 
 - **Documentation**: See `specs/001-breaking-battles/` for detailed specifications
 - **Quickstart**: See `specs/001-breaking-battles/quickstart.md` for setup guide
 - **API Reference**: Navigate to `/swagger` when running the application
+- **UI Implementation**: See `BLAZOR_IMPLEMENTATION.md` for UI architecture
+- **Progress Report**: See `FINAL_REPORT.md` for current implementation status
 
 ---
 
@@ -312,3 +356,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built for the breaking (breakdance) community
 - Designed for competitive battle management
 - Inspired by real-world tournament needs
+- UI powered by [MudBlazor](https://mudblazor.com/)
