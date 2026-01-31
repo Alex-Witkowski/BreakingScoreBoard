@@ -1,0 +1,538 @@
+@page "/spectator/bracket"
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Contracts.Public
+@using BreakingScoreBoard.Domain.Enums
+@using System.Net.Http.Json
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Ranking Battle - Bracket View</PageTitle>
+
+<div class="bracket-container">
+    <!-- Header with Navigation -->
+    <div class="bracket-header-nav">
+        <h1>RANKING BATTLE</h1>
+        <div class="nav-links">
+            <a href="/judge/scoring" class="nav-link">Judge Scoring</a>
+            <a href="/spectator/scoreboard" class="nav-link">Spectator Scoreboard</a>
+            <a href="/spectator/rankings" class="nav-link">Rankings</a>
+            <a href="/spectator/bracket" class="nav-link active">Battle View</a>
+        </div>
+    </div>
+
+    <!-- Event Selector -->
+    @if (!eventLoaded)
+    {
+        <MudPaper Class="pa-4 mb-4">
+            <MudTextField @bind-Value="eventIdInput" 
+                          Label="Event ID" 
+                          Variant="Variant.Outlined"
+                          Placeholder="Enter Event ID"
+                          Class="mb-3" />
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick="LoadEvent"
+                       Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                }
+                Load Event
+            </MudButton>
+        </MudPaper>
+    }
+
+    @if (loadError != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@loadError</MudAlert>
+    }
+
+    @if (standings != null)
+    {
+        <!-- Category Selector -->
+        <div class="category-selector">
+            @foreach (var cat in standings.Categories)
+            {
+                <MudChip T="string" 
+                         Color="@(selectedCategoryId == cat.CategoryId ? Color.Primary : Color.Default)"
+                         OnClick="@(() => SelectCategory(cat.CategoryId))"
+                         Class="category-chip">
+                    @cat.CategoryName
+                </MudChip>
+            }
+        </div>
+
+        @if (selectedCategory != null)
+        {
+            <div class="bracket-info">
+                <div class="event-title">@eventTitle</div>
+                <div class="bracket-level-badge">@selectedCategory.CategoryName - @selectedCategory.CurrentPhase</div>
+                <div class="battle-type-badge">1vs1 @(GetCurrentLevelDisplay())</div>
+            </div>
+
+            <!-- Bracket Visualization -->
+            <div class="tournament-bracket">
+                @if (selectedCategory.CurrentPhase == CategoryPhase.Bracket || selectedCategory.CurrentPhase == CategoryPhase.Completed)
+                {
+                    <!-- Three columns: Top8, Top4, Final + Champion -->
+                    <div class="bracket-columns">
+                        <!-- Left Side - Top 8 -->
+                        <div class="bracket-column">
+                            <div class="bracket-round-label">TOP 8 - QUARTER FINALS</div>
+                            @for (int i = 0; i < 4; i++)
+                            {
+                                var breakers = GetBreakersForLevel(BracketLevel.Top8, i * 2, 2);
+                                <div class="bracket-match">
+                                    @foreach (var breaker in breakers)
+                                    {
+                                        <div class="bracket-fighter @GetFighterClass(breaker)">
+                                            <div class="flag-placeholder"></div>
+                                            <div class="fighter-name">@breaker.BreakerName</div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Middle - Top 4 (Semi-finals) -->
+                        <div class="bracket-column">
+                            <div class="bracket-round-label">TOP 4 - SEMI FINALS</div>
+                            @for (int i = 0; i < 2; i++)
+                            {
+                                var breakers = GetBreakersForLevel(BracketLevel.Top4, i * 2, 2);
+                                <div class="bracket-match bracket-match-spaced">
+                                    @foreach (var breaker in breakers)
+                                    {
+                                        <div class="bracket-fighter @GetFighterClass(breaker)">
+                                            <div class="flag-placeholder"></div>
+                                            <div class="fighter-name">@breaker.BreakerName</div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Right Side - Finals + Champion -->
+                        <div class="bracket-column">
+                            <div class="bracket-round-label">FINAL</div>
+                            
+                            <!-- Finalists -->
+                            @{
+                                var finalists = GetBreakersForLevel(BracketLevel.Final, 0, 2);
+                            }
+                            <div class="bracket-match bracket-match-final">
+                                @foreach (var breaker in finalists)
+                                {
+                                    <div class="bracket-fighter @GetFighterClass(breaker)">
+                                        <div class="flag-placeholder"></div>
+                                        <div class="fighter-name">@breaker.BreakerName</div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Champion -->
+                            @{
+                                var champion = GetChampion();
+                            }
+                            @if (champion != null)
+                            {
+                                <div class="champion-section">
+                                    <div class="champion-box">
+                                        <div class="champion-name">@champion.BreakerName</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (selectedCategory.CurrentPhase == CategoryPhase.PreSelection)
+                {
+                    <div class="preselection-info">
+                        <MudAlert Severity="Severity.Info">
+                            Pre-selection battles are in progress. The bracket will be available after pre-selection is complete.
+                        </MudAlert>
+                        <p class="mt-3">View the <a href="/spectator/rankings?eventId=@eventIdInput">Rankings Table</a> for current standings.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="preselection-info">
+                        <MudAlert Severity="Severity.Warning">
+                            Registration is still open. The bracket will be available once battles begin.
+                        </MudAlert>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+<style>
+    .bracket-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 20px;
+        min-height: 100vh;
+    }
+
+    .bracket-header-nav h1 {
+        color: white;
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .nav-link:hover {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-link.active {
+        color: white;
+        border-bottom-color: #d32f2f;
+    }
+
+    .category-selector {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .category-chip {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .bracket-info {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .event-title {
+        color: white;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .bracket-level-badge {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .battle-type-badge {
+        color: #ffc107;
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .tournament-bracket {
+        background: rgba(20, 20, 25, 0.7);
+        border-radius: 8px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .bracket-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .bracket-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .bracket-round-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+
+    .bracket-match {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .bracket-match-spaced {
+        margin: 2rem 0;
+    }
+
+    .bracket-match-final {
+        margin: 4rem 0;
+    }
+
+    .bracket-fighter {
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.3s;
+    }
+
+    .bracket-fighter.winner {
+        background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+        border-color: #ffc107;
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+    }
+
+    .bracket-fighter.champion {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        border-color: #fff;
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
+    }
+
+    .bracket-fighter.eliminated {
+        opacity: 0.5;
+    }
+
+    .flag-placeholder {
+        width: 30px;
+        height: 20px;
+        background: linear-gradient(to bottom, #000 33%, #dd0000 33%, #dd0000 66%, #ffcc00 66%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        flex-shrink: 0;
+    }
+
+    .fighter-name {
+        color: white;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .bracket-fighter.winner .fighter-name,
+    .bracket-fighter.champion .fighter-name {
+        color: #1a1a1a;
+        font-weight: bold;
+    }
+
+    .champion-section {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .champion-box {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        border: 3px solid #fff;
+        border-radius: 8px;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 0 30px rgba(255, 193, 7, 0.9);
+        animation: pulse 2s infinite;
+    }
+
+    .champion-name {
+        color: #1a1a1a;
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 30px rgba(255, 193, 7, 0.9);
+        }
+        50% {
+            box-shadow: 0 0 50px rgba(255, 193, 7, 1);
+        }
+    }
+
+    .preselection-info {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .preselection-info a {
+        color: #ffc107;
+        text-decoration: underline;
+    }
+
+    @@media (max-width: 1200px) {
+        .bracket-columns {
+            grid-template-columns: 1fr;
+        }
+
+        .bracket-round-label {
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+        }
+    }
+</style>
+
+@code {
+    [SupplyParameterFromQuery(Name = "eventId")]
+    public string? EventIdFromQuery { get; set; }
+
+    private string eventIdInput = string.Empty;
+    private string eventTitle = string.Empty;
+    private StandingsResponse? standings;
+    private CategoryStandings? selectedCategory;
+    private Guid? selectedCategoryId;
+    private bool eventLoaded = false;
+    private bool isLoading = false;
+    private string? loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(EventIdFromQuery))
+        {
+            eventIdInput = EventIdFromQuery;
+            await LoadEvent();
+        }
+    }
+
+    private async Task LoadEvent()
+    {
+        if (string.IsNullOrWhiteSpace(eventIdInput) || !Guid.TryParse(eventIdInput, out var eventId))
+        {
+            loadError = "Please enter a valid Event ID";
+            return;
+        }
+
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            var client = ClientFactory.CreateClient();
+            client.BaseAddress = new Uri(Navigation.BaseUri);
+
+            var standingsResponse = await client.GetAsync($"/public/events/{eventId}/standings");
+            if (standingsResponse.IsSuccessStatusCode)
+            {
+                standings = await standingsResponse.Content.ReadFromJsonAsync<StandingsResponse>();
+                eventLoaded = true;
+
+                // Select first category by default
+                if (standings?.Categories.Any() == true)
+                {
+                    selectedCategory = standings.Categories.First();
+                    selectedCategoryId = selectedCategory.CategoryId;
+                }
+
+                // Get event title (you might need to fetch this from a separate endpoint)
+                eventTitle = "Breaking Battle Championship";
+            }
+            else
+            {
+                loadError = $"Error loading standings: {standingsResponse.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Exception: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SelectCategory(Guid categoryId)
+    {
+        selectedCategoryId = categoryId;
+        selectedCategory = standings?.Categories.FirstOrDefault(c => c.CategoryId == categoryId);
+    }
+
+    private string GetCurrentLevelDisplay()
+    {
+        if (selectedCategory?.CurrentLevel == null)
+            return "Registration";
+
+        return selectedCategory.CurrentLevel.ToString();
+    }
+
+    private List<BreakerStanding> GetBreakersForLevel(BracketLevel level, int skip, int take)
+    {
+        if (selectedCategory == null)
+            return new List<BreakerStanding>();
+
+        // Get breakers who competed at this level or higher
+        var breakers = selectedCategory.Standings
+            .Where(s => s.CurrentLevel != null && (int)s.CurrentLevel >= (int)level)
+            .OrderByDescending(s => s.Wins)
+            .ThenBy(s => s.Losses)
+            .ThenByDescending(s => s.AverageScore)
+            .Skip(skip)
+            .Take(take)
+            .ToList();
+
+        // Fill with placeholders if needed
+        while (breakers.Count < take)
+        {
+            breakers.Add(new BreakerStanding
+            {
+                BreakerId = Guid.Empty,
+                BreakerName = "TBD",
+                Wins = 0,
+                Losses = 0,
+                Status = RegistrationStatus.Active
+            });
+        }
+
+        return breakers;
+    }
+
+    private BreakerStanding? GetChampion()
+    {
+        if (selectedCategory == null || selectedCategory.CurrentPhase != CategoryPhase.Completed)
+            return null;
+
+        // The champion would be the breaker with the most wins and highest level
+        return selectedCategory.Standings
+            .Where(s => s.Status == RegistrationStatus.Advanced && s.CurrentLevel == BracketLevel.Final)
+            .FirstOrDefault();
+    }
+
+    private string GetFighterClass(BreakerStanding breaker)
+    {
+        // Check if this is the champion (Advanced status at Final level)
+        if (breaker.Status == RegistrationStatus.Advanced && 
+            breaker.CurrentLevel == BracketLevel.Final &&
+            selectedCategory?.CurrentPhase == CategoryPhase.Completed)
+            return "champion";
+        
+        if (breaker.Status == RegistrationStatus.Eliminated)
+            return "eliminated";
+
+        // Determine if this breaker is a winner at their current level
+        if (breaker.Wins > 0 && breaker.CurrentLevel != null)
+            return "winner";
+
+        return "";
+    }
+}

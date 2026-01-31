@@ -1,0 +1,352 @@
+@page "/spectator/rankings"
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Contracts.Public
+@using System.Net.Http.Json
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
+
+<PageTitle>1 vs 1 Preselection Rankings</PageTitle>
+
+<div class="rankings-container">
+    <!-- Header with Navigation -->
+    <div class="rankings-header">
+        <h1>1 vs 1 Preselection Rankings</h1>
+        <div class="nav-links">
+            <a href="/judge/scoring" class="nav-link">Judge Scoring</a>
+            <a href="/spectator/scoreboard" class="nav-link">Spectator Scoreboard</a>
+            <a href="/spectator/rankings" class="nav-link active">Rankings</a>
+        </div>
+    </div>
+
+    <!-- Event Selector -->
+    @if (!eventLoaded)
+    {
+        <MudPaper Class="pa-4 mb-4">
+            <MudTextField @bind-Value="eventIdInput" 
+                          Label="Event ID" 
+                          Variant="Variant.Outlined"
+                          Placeholder="Enter Event ID"
+                          Class="mb-3" />
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick="LoadEvent"
+                       Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                }
+                Load Event
+            </MudButton>
+        </MudPaper>
+    }
+
+    @if (loadError != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@loadError</MudAlert>
+    }
+
+    @if (standings != null)
+    {
+        <!-- Filters -->
+        <MudPaper Class="pa-4 mb-4">
+            <div class="filters-row">
+                <MudSelect @bind-Value="selectedCategory" 
+                           Label="Filter Category" 
+                           Variant="Variant.Outlined"
+                           T="string"
+                           Class="filter-item">
+                    <MudSelectItem Value="@("All")">All Categories</MudSelectItem>
+                    @foreach (var cat in standings.Categories)
+                    {
+                        <MudSelectItem Value="@cat.CategoryName">@cat.CategoryName</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudTextField @bind-Value="searchTerm" 
+                              Label="Search Dancer..." 
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Class="filter-item" />
+            </div>
+        </MudPaper>
+
+        <!-- Rankings Table -->
+        @foreach (var category in GetFilteredCategories())
+        {
+            var categoryStandings = GetFilteredStandings(category);
+            
+            @if (categoryStandings.Any())
+            {
+                <MudPaper Class="mb-4">
+                    <div class="category-header">
+                        <h3>@category.CategoryName</h3>
+                        <MudChip T="string" Color="Color.Info">@category.CurrentPhase</MudChip>
+                    </div>
+                    
+                    <MudTable Items="@categoryStandings" 
+                              Hover="true" 
+                              Striped="true"
+                              Class="rankings-table">
+                        <HeaderContent>
+                            <MudTh>Pos</MudTh>
+                            <MudTh>Dancer</MudTh>
+                            <MudTh>Wins</MudTh>
+                            <MudTh>Losses</MudTh>
+                            <MudTh>Points</MudTh>
+                            <MudTh>Rank</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Pos">@context.Position</MudTd>
+                            <MudTd DataLabel="Dancer">
+                                <strong>@context.Breaker.BreakerName</strong>
+                            </MudTd>
+                            <MudTd DataLabel="Wins">
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success">@context.Breaker.Wins</MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Losses">
+                                <MudChip T="string" Size="Size.Small" Color="Color.Error">@context.Breaker.Losses</MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Points">
+                                @if (context.Breaker.AverageScore.HasValue)
+                                {
+                                    <span>@context.Breaker.AverageScore.Value.ToString("F1")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">--</span>
+                                }
+                            </MudTd>
+                            <MudTd DataLabel="Rank">@context.Position</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+
+                    <!-- Match List for this category -->
+                    @if (category.CurrentPhase != Domain.Enums.CategoryPhase.Registration)
+                    {
+                        <div class="match-list">
+                            <h4>Match List</h4>
+                            @if (GetCategoryMatches(category.CategoryId).Any())
+                            {
+                                <MudList T="string">
+                                    @foreach (var match in GetCategoryMatches(category.CategoryId))
+                                    {
+                                        <MudListItem T="string" Icon="@Icons.Material.Filled.ChevronRight">
+                                            <strong>@match.Winner.Name</strong> vs @match.Loser.Name
+                                            @if (match.WinnerAvgScore.HasValue && match.LoserAvgScore.HasValue)
+                                            {
+                                                <span class="match-score">
+                                                    (@match.WinnerAvgScore.Value.ToString("F1") - @match.LoserAvgScore.Value.ToString("F1"))
+                                                </span>
+                                            }
+                                        </MudListItem>
+                                    }
+                                </MudList>
+                            }
+                            else
+                            {
+                                <p class="text-muted pa-3">No matches yet</p>
+                            }
+                        </div>
+                    }
+                </MudPaper>
+            }
+        }
+    }
+</div>
+
+<style>
+    .rankings-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .rankings-header {
+        margin-bottom: 2rem;
+    }
+
+    .rankings-header h1 {
+        color: white;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .nav-link:hover {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-link.active {
+        color: white;
+        border-bottom-color: #d32f2f;
+    }
+
+    .filters-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .category-header {
+        padding: 1rem;
+        background: linear-gradient(135deg, #212529 0%, #343a40 100%);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .category-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .match-list {
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.05);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .match-list h4 {
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .match-score {
+        color: rgba(255, 255, 255, 0.6);
+        margin-left: 0.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .filters-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@code {
+    [SupplyParameterFromQuery(Name = "eventId")]
+    public string? EventIdFromQuery { get; set; }
+
+    private string eventIdInput = string.Empty;
+    private StandingsResponse? standings;
+    private List<BattleResultResponse> recentMatches = new();
+    private bool eventLoaded = false;
+    private bool isLoading = false;
+    private string? loadError;
+    private string selectedCategory = "All";
+    private string searchTerm = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(EventIdFromQuery))
+        {
+            eventIdInput = EventIdFromQuery;
+            await LoadEvent();
+        }
+    }
+
+    private async Task LoadEvent()
+    {
+        if (string.IsNullOrWhiteSpace(eventIdInput) || !Guid.TryParse(eventIdInput, out var eventId))
+        {
+            loadError = "Please enter a valid Event ID";
+            return;
+        }
+
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            var client = ClientFactory.CreateClient();
+            client.BaseAddress = new Uri(Navigation.BaseUri);
+
+            // Load standings
+            var standingsResponse = await client.GetAsync($"/public/events/{eventId}/standings");
+            if (standingsResponse.IsSuccessStatusCode)
+            {
+                standings = await standingsResponse.Content.ReadFromJsonAsync<StandingsResponse>();
+                eventLoaded = true;
+            }
+            else
+            {
+                loadError = $"Error loading standings: {standingsResponse.StatusCode}";
+            }
+
+            // Load recent matches for match list
+            var scoreboardResponse = await client.GetAsync($"/public/events/{eventId}/scoreboard");
+            if (scoreboardResponse.IsSuccessStatusCode)
+            {
+                var scoreboard = await scoreboardResponse.Content.ReadFromJsonAsync<ScoreboardResponse>();
+                recentMatches = scoreboard?.RecentResults ?? new();
+            }
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Exception: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private IEnumerable<CategoryStandings> GetFilteredCategories()
+    {
+        if (standings == null) return Enumerable.Empty<CategoryStandings>();
+
+        if (selectedCategory == "All")
+            return standings.Categories;
+
+        return standings.Categories.Where(c => c.CategoryName == selectedCategory);
+    }
+
+    private List<RankedBreaker> GetFilteredStandings(CategoryStandings category)
+    {
+        var filtered = category.Standings.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filtered = filtered.Where(s => 
+                s.BreakerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return filtered
+            .Select((breaker, index) => new RankedBreaker 
+            { 
+                Position = index + 1, 
+                Breaker = breaker 
+            })
+            .ToList();
+    }
+
+    private IEnumerable<BattleResultResponse> GetCategoryMatches(Guid categoryId)
+    {
+        // For now, we'll show all recent matches
+        // In a real implementation, you'd filter by categoryId from battle data
+        return recentMatches.Take(5);
+    }
+
+    private class RankedBreaker
+    {
+        public int Position { get; set; }
+        public BreakerStanding Breaker { get; set; } = null!;
+    }
+}
