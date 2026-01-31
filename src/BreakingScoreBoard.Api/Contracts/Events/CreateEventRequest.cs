@@ -72,6 +72,18 @@ public record CreateCategoryRequest
     public int? MaxAge { get; init; }
 
     /// <summary>
+    /// Minimum birth year for this category (null = no minimum).
+    /// </summary>
+    [Range(1900, 2100)]
+    public int? MinBirthYear { get; init; }
+
+    /// <summary>
+    /// Maximum birth year for this category (null = no maximum).
+    /// </summary>
+    [Range(1900, 2100)]
+    public int? MaxBirthYear { get; init; }
+
+    /// <summary>
     /// Target bracket size (8, 16, 32, or 64).
     /// </summary>
     [Required]

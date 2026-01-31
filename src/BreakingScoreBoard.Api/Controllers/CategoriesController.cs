@@ -146,6 +146,8 @@ public class CategoriesController : ControllerBase
             EventId = eventId,
             Name = request.Name,
             MaxAge = request.MaxAge,
+            MinBirthYear = request.MinBirthYear,
+            MaxBirthYear = request.MaxBirthYear,
             BracketSize = request.BracketSize,
             CurrentPhase = CategoryPhase.Registration,
             SortOrder = maxSortOrder + 1
@@ -345,6 +347,8 @@ public class CategoriesController : ControllerBase
             EventId = category.EventId,
             Name = category.Name,
             MaxAge = category.MaxAge,
+            MinBirthYear = category.MinBirthYear,
+            MaxBirthYear = category.MaxBirthYear,
             BracketSize = category.BracketSize,
             CurrentPhase = category.CurrentPhase,
             SortOrder = category.SortOrder,

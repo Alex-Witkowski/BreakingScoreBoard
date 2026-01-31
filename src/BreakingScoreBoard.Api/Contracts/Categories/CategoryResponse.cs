@@ -28,6 +28,16 @@ public record CategoryResponse
     public int? MaxAge { get; init; }
 
     /// <summary>
+    /// Minimum birth year for this category (null = no minimum).
+    /// </summary>
+    public int? MinBirthYear { get; init; }
+
+    /// <summary>
+    /// Maximum birth year for this category (null = no maximum).
+    /// </summary>
+    public int? MaxBirthYear { get; init; }
+
+    /// <summary>
     /// Target bracket size.
     /// </summary>
     public required int BracketSize { get; init; }

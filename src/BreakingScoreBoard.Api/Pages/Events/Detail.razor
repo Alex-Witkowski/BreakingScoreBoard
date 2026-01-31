@@ -4,6 +4,7 @@
 @using BreakingScoreBoard.Api.Contracts.Events
 @using BreakingScoreBoard.Domain.Enums
 @inject EventsApiClient EventsApi
+@inject CategoriesApiClient CategoriesApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -173,14 +174,25 @@
         </MudPaper>
 
         <!-- Age Categories -->
-        @if (eventData.Categories.Any())
-        {
-            <MudPaper Class="form-panel pa-6">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-                    <MudText Typo="Typo.h5" Style="color: white; font-weight: 300;">Age Categories</MudText>
-                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">@eventData.Categories.Count Categories</MudChip>
+        <MudPaper Class="form-panel pa-6">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <MudText Typo="Typo.h5" Style="color: white; font-weight: 300;">Age Categories</MudText>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    @if (eventData.Categories.Any())
+                    {
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">@eventData.Categories.Count Categories</MudChip>
+                    }
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="@OpenCreateCategoryDialog">
+                        Add Category
+                    </MudButton>
                 </div>
-                
+            </div>
+            
+            @if (eventData.Categories.Any())
+            {
                 @foreach (var category in eventData.Categories.OrderBy(c => c.SortOrder))
                 {
                     <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1rem; margin-bottom: 0.75rem; border-left: 3px solid #d32f2f;">
@@ -188,7 +200,11 @@
                             <div style="flex: 1; min-width: 200px;">
                                 <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">@category.Name</MudText>
                                 <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
-                                    @if (category.MaxAge.HasValue)
+                                    @if (category.MinBirthYear.HasValue || category.MaxBirthYear.HasValue)
+                                    {
+                                        <span>Born: @GetBirthYearRangeText(category.MinBirthYear, category.MaxBirthYear)</span>
+                                    }
+                                    else if (category.MaxAge.HasValue)
                                     {
                                         <span>Age limit: @category.MaxAge years</span>
                                     }
@@ -220,17 +236,16 @@
                         </div>
                     </div>
                 }
-            </MudPaper>
-        }
-        else
-        {
-            <MudPaper Class="form-panel pa-6">
+            }
+            else
+            {
                 <div class="empty-state" style="padding: 2rem 1rem;">
                     <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Large" Style="font-size: 3rem; opacity: 0.3;" />
                     <MudText Typo="Typo.body1" Class="mt-2">No age categories created yet</MudText>
+                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Click "Add Category" to create your first category</MudText>
                 </div>
-            </MudPaper>
-        }
+            }
+        </MudPaper>
         
         <!-- Action Buttons -->
         <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
@@ -357,6 +372,48 @@
         {
             Snackbar.Add("Judge PIN regenerated successfully", Severity.Success);
         }
+    }
+    
+    private async Task OpenCreateCategoryDialog()
+    {
+        if (eventData == null) return;
+        
+        var parameters = new DialogParameters
+        {
+            ["EventId"] = EventId
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<CreateCategoryDialog>("Create Age Category", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await LoadEventData(); // Refresh to show the new category
+        }
+    }
+    
+    private string GetBirthYearRangeText(int? minYear, int? maxYear)
+    {
+        if (minYear.HasValue && maxYear.HasValue)
+        {
+            return $"{minYear} - {maxYear}";
+        }
+        else if (minYear.HasValue)
+        {
+            return $"{minYear} and later";
+        }
+        else if (maxYear.HasValue)
+        {
+            return $"up to {maxYear}";
+        }
+        return "All years";
     }
     
     private Color GetPhaseColor(CategoryPhase phase)

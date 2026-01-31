@@ -1,0 +1,166 @@
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Services
+@using BreakingScoreBoard.Api.Contracts.Events
+@inject CategoriesApiClient CategoriesApi
+@inject ISnackbar Snackbar
+
+<MudDialog Style="background: rgba(30, 30, 35, 0.98); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);">
+    <DialogContent>
+        <MudText Style="color: white; font-size: 1.2rem; margin-bottom: 24px; font-weight: 300;">
+            Create Age Category
+        </MudText>
+        
+        <MudForm @ref="form" @bind-IsValid="@isFormValid">
+            <MudTextField @bind-Value="model.Name"
+                          Label="Category Name"
+                          Placeholder="e.g., Minis, Kids, Open"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          MaxLength="50"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;"
+                          HelperText="Enter a descriptive name for this age category" />
+            
+            <MudText Typo="Typo.subtitle2" Style="color: rgba(255, 255, 255, 0.7); margin-bottom: 12px;">
+                Year of Birth Range
+            </MudText>
+            
+            <MudGrid Spacing="2" Class="mb-4">
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="model.MinBirthYear"
+                                     Label="From Year (optional)"
+                                     Placeholder="e.g., 2010"
+                                     Variant="Variant.Outlined"
+                                     Min="1900"
+                                     Max="2100"
+                                     Style="font-size: 1.1rem;"
+                                     HelperText="Earliest birth year" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="model.MaxBirthYear"
+                                     Label="To Year (optional)"
+                                     Placeholder="e.g., 2020"
+                                     Variant="Variant.Outlined"
+                                     Min="1900"
+                                     Max="2100"
+                                     Style="font-size: 1.1rem;"
+                                     HelperText="Latest birth year" />
+                </MudItem>
+            </MudGrid>
+            
+            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5); margin-bottom: 24px;">
+                Example: Minis born from 2020 till today - set From: 2020, To: @DateTime.Now.Year<br/>
+                Kids born after 2012 - set From: 2012, leave To empty
+            </MudText>
+            
+            <MudText Style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin-bottom: 12px; margin-top: 16px;">
+                Enter your admin PIN to create the category
+            </MudText>
+            
+            <MudTextField @bind-Value="model.AdminPin"
+                          Label="Admin PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Style="font-size: 1.1rem;" />
+        </MudForm>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Style="color: rgba(255, 255, 255, 0.7); text-transform: none; font-size: 1rem;">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="Submit" 
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!isFormValid || isCreating)"
+                   Style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); color: white; font-size: 1rem; text-transform: none; font-weight: 500;">
+            @if (isCreating)
+            {
+                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                <span>Creating...</span>
+            }
+            else
+            {
+                <span>Create Category</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    [Parameter]
+    public Guid EventId { get; set; }
+    
+    private MudForm form = default!;
+    private bool isFormValid;
+    private bool isCreating;
+    
+    private CreateCategoryModel model = new();
+    
+    private class CreateCategoryModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int? MinBirthYear { get; set; }
+        public int? MaxBirthYear { get; set; }
+        public int BracketSize { get; set; } = 16;
+        public string AdminPin { get; set; } = string.Empty;
+    }
+    
+    private async Task Submit()
+    {
+        if (!isFormValid) return;
+        
+        // Validate birth year range
+        if (model.MinBirthYear.HasValue && model.MaxBirthYear.HasValue && model.MinBirthYear > model.MaxBirthYear)
+        {
+            Snackbar.Add("From year cannot be greater than To year", Severity.Error);
+            return;
+        }
+        isCreating = true;
+        StateHasChanged();
+        
+        try
+        {
+            var createRequest = new CreateCategoryRequest
+            {
+                Name = model.Name,
+                MinBirthYear = model.MinBirthYear,
+                MaxBirthYear = model.MaxBirthYear,
+                BracketSize = 16, // Default bracket size, will be adjusted based on registrations
+                MaxAge = null // Keep MaxAge for backward compatibility
+            };
+            
+            await CategoriesApi.CreateCategoryAsync(EventId, createRequest, model.AdminPin);
+            
+            Snackbar.Add($"Category '{model.Name}' created successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Snackbar.Add("Invalid admin PIN", Severity.Error);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            Snackbar.Add("Cannot add categories after battles have started", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating category: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isCreating = false;
+            StateHasChanged();
+        }
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

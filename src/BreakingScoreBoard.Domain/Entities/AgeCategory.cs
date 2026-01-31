@@ -18,6 +18,12 @@ public class AgeCategory
     /// <summary>Upper age limit (null = no limit, e.g., "Open").</summary>
     public int? MaxAge { get; set; }
 
+    /// <summary>Minimum birth year for this category (null = no minimum).</summary>
+    public int? MinBirthYear { get; set; }
+
+    /// <summary>Maximum birth year for this category (null = no maximum).</summary>
+    public int? MaxBirthYear { get; set; }
+
     /// <summary>Target bracket size (8, 16, 32, or 64).</summary>
     public int BracketSize { get; set; }
 
