@@ -8,9 +8,9 @@ namespace BreakingScoreBoard.Api.Contracts.Public;
 public sealed record BracketMatchup
 {
     /// <summary>
-    /// Battle ID (null if battle hasn't been created yet).
+    /// Battle ID.
     /// </summary>
-    public Guid? BattleId { get; init; }
+    public required Guid BattleId { get; init; }
 
     /// <summary>
     /// Bracket level for this matchup.
@@ -35,7 +35,7 @@ public sealed record BracketMatchup
     /// <summary>
     /// Battle status.
     /// </summary>
-    public BattleStatus? Status { get; init; }
+    public required BattleStatus Status { get; init; }
 
     /// <summary>
     /// Winner's average score (null for walkover or not completed).

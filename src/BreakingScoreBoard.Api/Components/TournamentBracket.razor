@@ -77,14 +77,11 @@
                                 </div>
 
                                 <!-- Status Badge -->
-                                @if (matchup.Status.HasValue)
-                                {
-                                    <div class="matchup-status">
-                                        <span class="badge bg-@GetStatusBadge(matchup.Status.Value.ToString())">
-                                            @matchup.Status.Value
-                                        </span>
-                                    </div>
-                                }
+                                <div class="matchup-status">
+                                    <span class="badge bg-@GetStatusBadge(matchup.Status.ToString())">
+                                        @matchup.Status
+                                    </span>
+                                </div>
                             </div>
                         }
                     </div>
