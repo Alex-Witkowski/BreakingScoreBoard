@@ -82,7 +82,8 @@
         <!-- Display Selected Category Bracket -->
         @if (selectedCategoryIndex >= 0 && selectedCategoryIndex < brackets.Categories.Count)
         {
-            <TournamentBracket CategoryBracket="@brackets.Categories[selectedCategoryIndex]" />
+            <TournamentBracket CategoryBracket="@brackets.Categories[selectedCategoryIndex]" 
+                             EventTitle="@brackets.EventTitle" />
         }
     }
     else if (brackets != null)

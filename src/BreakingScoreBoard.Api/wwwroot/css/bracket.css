@@ -107,6 +107,24 @@
     gap: 0.5rem;
 }
 
+/* Horizontal connector from match to next round */
+.bracket-match::after {
+    content: '';
+    position: absolute;
+    right: -2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    height: 2px;
+    background: #ffffff;
+    z-index: 1;
+}
+
+.bracket-right .bracket-match::after {
+    right: auto;
+    left: -2rem;
+}
+
 /* Competitor Box */
 .bracket-competitor {
     background: #888888;
@@ -176,39 +194,49 @@
 }
 
 /* Connecting Lines */
-.bracket-quarter::after,
-.bracket-semi::after {
-    content: '';
-    position: absolute;
-    right: -2rem;
-    top: 50%;
-    width: 2rem;
-    height: 2px;
-    background: #ffffff;
-}
+/* Remove old generic connectors */
 
-.bracket-right .bracket-quarter::after,
-.bracket-right .bracket-semi::after {
-    right: auto;
-    left: -2rem;
-}
-
-/* Vertical connecting lines for quarters */
+/* Vertical connecting lines for quarters - connects pairs of matches */
 .bracket-quarter {
     position: relative;
 }
 
-.bracket-quarter::before {
+/* Vertical line connecting first two matches in quarter-finals */
+.bracket-quarter .bracket-match:nth-child(1)::before,
+.bracket-quarter .bracket-match:nth-child(3)::before {
     content: '';
     position: absolute;
     right: -2rem;
-    top: calc(25% + 1.5rem);
-    bottom: calc(25% - 1.5rem);
+    top: 50%;
+    height: calc(100% + 3rem);
     width: 2px;
     background: #ffffff;
+    z-index: 0;
 }
 
-.bracket-right .bracket-quarter::before {
+.bracket-right .bracket-quarter .bracket-match:nth-child(1)::before,
+.bracket-right .bracket-quarter .bracket-match:nth-child(3)::before {
+    right: auto;
+    left: -2rem;
+}
+
+/* Semi-finals vertical connectors */
+.bracket-semi {
+    position: relative;
+}
+
+.bracket-semi .bracket-match:first-child::before {
+    content: '';
+    position: absolute;
+    right: -2rem;
+    top: 50%;
+    height: calc(100% + 8rem);
+    width: 2px;
+    background: #ffffff;
+    z-index: 0;
+}
+
+.bracket-right .bracket-semi .bracket-match:first-child::before {
     right: auto;
     left: -2rem;
 }
