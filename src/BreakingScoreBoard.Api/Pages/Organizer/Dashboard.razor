@@ -20,7 +20,7 @@
 
     <!-- Create Event Form -->
     <MudPaper Class="form-panel pa-6">
-        <EditForm Model="@model" OnValidSubmit="@CreateEvent">
+        <EditForm Model="@model" OnValidSubmit="@CreateEvent" FormName="createEventForm">
             <DataAnnotationsValidator />
             
             <MudTextField @bind-Value="model.Title" 
@@ -115,15 +115,15 @@
     {
         await LoadEvents();
         
-        // Auto-refresh events every 30 seconds
-        refreshTimer = new System.Threading.Timer(async _ =>
-        {
-            await InvokeAsync(async () =>
-            {
-                await LoadEvents();
-                StateHasChanged();
-            });
-        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        // Auto-refresh disabled temporarily for testing
+        // refreshTimer = new System.Threading.Timer(async _ =>
+        // {
+        //     await InvokeAsync(async () =>
+        //     {
+        //         await LoadEvents();
+        //         StateHasChanged();
+        //     });
+        // }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
 
     private async Task LoadEvents()

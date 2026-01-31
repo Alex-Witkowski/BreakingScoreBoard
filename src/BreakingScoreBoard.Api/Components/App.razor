@@ -14,24 +14,16 @@
     <HeadOutlet />
 </head>
 <body>
-    <MudThemeProvider Theme="@_darkTheme" IsDarkMode="true" />
-    <MudPopoverProvider />
-    <MudDialogProvider />
-    <MudSnackbarProvider />
-    
     <Router AppAssembly="typeof(Program).Assembly">
         <Found Context="routeData">
             <RouteView RouteData="routeData" DefaultLayout="typeof(Layout)" />
         </Found>
         <NotFound>
             <PageTitle>Not found</PageTitle>
-            <MudContainer Class="mt-8">
-                <MudText Typo="Typo.h3" Color="Color.Error">Page not found</MudText>
-                <MudText Typo="Typo.body1" Class="mt-4">Sorry, there's nothing at this address.</MudText>
-                <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">
-                    Go to Home
-                </MudButton>
-            </MudContainer>
+            <div class="container mt-8">
+                <h1 class="text-danger">Page not found</h1>
+                <p class="mt-4">Sorry, there's nothing at this address.</p>
+            </div>
         </NotFound>
     </Router>
 
@@ -39,20 +31,3 @@
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>
 </html>
-
-@code {
-    private MudTheme _darkTheme = new MudTheme()
-    {
-        PaletteDark = new PaletteDark()
-        {
-            Primary = "#d32f2f",
-            Secondary = "#424242",
-            AppbarBackground = "#1a1a1a",
-            Background = "#0a0a0a",
-            Surface = "#1e1e23",
-            DrawerBackground = "#141419",
-            TextPrimary = "#ffffff",
-            TextSecondary = "#b0b0b0"
-        }
-    };
-}
