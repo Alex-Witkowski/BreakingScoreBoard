@@ -1,19 +1,32 @@
-<MudDialog>
+<MudDialog Style="background: rgba(30, 30, 35, 0.98); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);">
     <DialogContent>
-        <MudText>Are you sure you want to delete the event <strong>@EventTitle</strong>?</MudText>
-        <MudText Class="mt-2" Typo="Typo.body2" Color="Color.Error">This action cannot be undone.</MudText>
+        <MudText Style="color: white; font-size: 1.1rem; margin-bottom: 8px;">
+            Are you sure you want to delete the event <strong>@EventTitle</strong>?
+        </MudText>
+        <MudText Style="color: #ff5252; font-size: 0.95rem; margin-bottom: 24px;">
+            This action cannot be undone.
+        </MudText>
         
         <MudTextField @bind-Value="adminPin"
                       Label="Admin PIN"
-                      Variant="Variant.Filled"
+                      Variant="Variant.Outlined"
                       InputType="InputType.Password"
                       Required="true"
-                      Class="mt-4"
+                      Style="font-size: 1.1rem;"
                       HelperText="Enter admin PIN to confirm deletion" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Submit" Disabled="@string.IsNullOrEmpty(adminPin)">Delete</MudButton>
+        <MudButton OnClick="Cancel" 
+                   Style="color: rgba(255, 255, 255, 0.7); text-transform: none; font-size: 1rem;">
+            Cancel
+        </MudButton>
+        <MudButton Color="Color.Error" 
+                   Variant="Variant.Filled" 
+                   OnClick="Submit" 
+                   Disabled="@string.IsNullOrEmpty(adminPin)"
+                   Style="background: linear-gradient(135deg, #c62828 0%, #8e0000 100%); color: white; font-size: 1rem; text-transform: none; font-weight: 500;">
+            Delete
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
