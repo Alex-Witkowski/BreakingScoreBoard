@@ -14,7 +14,7 @@
     <HeadOutlet />
 </head>
 <body>
-    <MudThemeProvider Theme="@_darkTheme" />
+    <MudThemeProvider Theme="@_darkTheme" IsDarkMode="true" />
     <MudPopoverProvider />
     <MudDialogProvider />
     <MudSnackbarProvider />
@@ -43,7 +43,7 @@
 @code {
     private MudTheme _darkTheme = new MudTheme()
     {
-        PaletteLight = new PaletteLight()
+        PaletteDark = new PaletteDark()
         {
             Primary = "#d32f2f",
             Secondary = "#424242",

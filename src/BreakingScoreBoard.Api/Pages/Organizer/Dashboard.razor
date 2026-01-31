@@ -133,9 +133,10 @@
             var eventsList = await EventsApi.GetEventsAsync();
             events = eventsList.OrderByDescending(e => e.EventDate).ToList();
         }
-        catch
+        catch (Exception ex)
         {
-            // Silent fail on background refresh
+            // Silent fail on background refresh, but log for debugging
+            Console.WriteLine($"Background refresh failed: {ex.Message}");
         }
     }
 
