@@ -1,0 +1,251 @@
+@page "/events/{EventId:guid}"
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Services
+@using BreakingScoreBoard.Api.Contracts.Events
+@using BreakingScoreBoard.Domain.Enums
+@inject EventsApiClient EventsApi
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>@(eventData?.Title ?? "Event Details")</PageTitle>
+
+<div class="dashboard-container">
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/organizer/dashboard")'>Dashboard</button>
+        <button class="nav-tab active">Event Details</button>
+        @if (eventData != null)
+        {
+            <button class="nav-tab" @onclick='() => Navigation.NavigateTo($"/judge/scoring?eventId={eventData.Id}")'>Judge Scoring</button>
+            <button class="nav-tab" @onclick='() => Navigation.NavigateTo($"/spectator/scoreboard?eventId={eventData.Id}")'>Spectator</button>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <MudPaper Class="form-panel pa-6">
+            <div style="text-align: center; padding: 2rem;">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Class="mt-4" Style="color: rgba(255, 255, 255, 0.7);">Loading event details...</MudText>
+            </div>
+        </MudPaper>
+    }
+    else if (eventData == null)
+    {
+        <MudPaper Class="form-panel pa-6">
+            <div class="empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Style="font-size: 4rem; opacity: 0.3;" />
+                <MudText Typo="Typo.h5" Class="mt-4">Event not found</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4" OnClick='() => Navigation.NavigateTo("/organizer/dashboard")'>
+                    Back to Dashboard
+                </MudButton>
+            </div>
+        </MudPaper>
+    }
+    else
+    {
+        <!-- Event Information -->
+        <MudPaper Class="form-panel pa-6 mb-4">
+            <MudText Typo="Typo.h4" Style="color: white; margin-bottom: 1.5rem; font-weight: 300;">
+                @eventData.Title
+            </MudText>
+            
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Event Date</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.EventDate.ToString("dd.MM.yyyy")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Location</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@(eventData.Location ?? "Not specified")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Number of Judges</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.JudgeCount Judges</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@(eventData.RegistrationOpen ? Icons.Material.Filled.LockOpen : Icons.Material.Filled.Lock)" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Registration Status</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">
+                                @(eventData.RegistrationOpen ? "Open" : "Closed")
+                            </MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.AddCircle" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Created</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.Update" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Last Updated</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.UpdatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Age Categories -->
+        @if (eventData.Categories.Any())
+        {
+            <MudPaper Class="form-panel pa-6">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                    <MudText Typo="Typo.h5" Style="color: white; font-weight: 300;">Age Categories</MudText>
+                    <MudChip Color="Color.Primary" Size="Size.Small">@eventData.Categories.Count Categories</MudChip>
+                </div>
+                
+                @foreach (var category in eventData.Categories.OrderBy(c => c.SortOrder))
+                {
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1rem; margin-bottom: 0.75rem; border-left: 3px solid #d32f2f;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">@category.Name</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    @if (category.MaxAge.HasValue)
+                                    {
+                                        <span>Age limit: @category.MaxAge years</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Open category (no age limit)</span>
+                                    }
+                                </MudText>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <div style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Bracket Size</MudText>
+                                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">@category.BracketSize</MudText>
+                                </div>
+                                
+                                <div style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Registered</MudText>
+                                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">@category.RegistrationCount</MudText>
+                                </div>
+                                
+                                <div style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Phase</MudText>
+                                    <MudChip Size="Size.Small" Color="@GetPhaseColor(category.CurrentPhase)">
+                                        @category.CurrentPhase.ToString()
+                                    </MudChip>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Class="form-panel pa-6">
+                <div class="empty-state" style="padding: 2rem 1rem;">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Large" Style="font-size: 3rem; opacity: 0.3;" />
+                    <MudText Typo="Typo.body1" Class="mt-2">No age categories created yet</MudText>
+                </div>
+            </MudPaper>
+        }
+        
+        <!-- Action Buttons -->
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Default" 
+                       OnClick='() => Navigation.NavigateTo("/organizer/dashboard")'
+                       StartIcon="@Icons.Material.Filled.ArrowBack">
+                Back to Dashboard
+            </MudButton>
+            
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Info" 
+                       OnClick='() => Navigation.NavigateTo($"/spectator/scoreboard?eventId={eventData.Id}")'
+                       StartIcon="@Icons.Material.Filled.Tv">
+                View Scoreboard
+            </MudButton>
+            
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Success" 
+                       OnClick='() => Navigation.NavigateTo($"/judge/scoring?eventId={eventData.Id}")'
+                       StartIcon="@Icons.Material.Filled.Star">
+                Judge Scoring
+            </MudButton>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid EventId { get; set; }
+    
+    private EventResponse? eventData;
+    private bool isLoading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventData();
+    }
+    
+    private async Task LoadEventData()
+    {
+        isLoading = true;
+        
+        try
+        {
+            eventData = await EventsApi.GetEventByIdAsync(EventId);
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error loading event: {ex.Message}", Severity.Error);
+            eventData = null;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+            eventData = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private Color GetPhaseColor(CategoryPhase phase)
+    {
+        return phase switch
+        {
+            CategoryPhase.Registration => Color.Info,
+            CategoryPhase.Seeding => Color.Warning,
+            CategoryPhase.Bracket => Color.Success,
+            CategoryPhase.Completed => Color.Default,
+            _ => Color.Default
+        };
+    }
+}
