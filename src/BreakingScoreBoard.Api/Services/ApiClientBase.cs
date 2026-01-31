@@ -168,6 +168,33 @@ public abstract class ApiClientBase
     }
 
     /// <summary>
+    /// Execute DELETE request
+    /// </summary>
+    protected async Task DeleteAsync(
+        string url,
+        string? pin = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var httpRequest = new HttpRequestMessage(HttpMethod.Delete, url);
+
+            if (!string.IsNullOrEmpty(pin))
+            {
+                httpRequest.Headers.Add("X-Pin", pin);
+            }
+
+            var response = await _httpClient.SendAsync(httpRequest, ct);
+            await EnsureSuccessWithErrorDetails(response);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request failed for DELETE {Url}", url);
+            throw new InvalidOperationException($"Failed to connect to API: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
     /// Ensure HTTP success status code and extract error details if available
     /// </summary>
     private async Task EnsureSuccessWithErrorDetails(HttpResponseMessage response)

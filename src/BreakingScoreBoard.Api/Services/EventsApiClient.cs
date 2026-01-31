@@ -66,4 +66,15 @@ public class EventsApiClient : ApiClientBase
             adminPin, 
             ct);
     }
+
+    /// <summary>
+    /// Delete an event
+    /// </summary>
+    public async Task DeleteEventAsync(
+        Guid eventId,
+        string adminPin,
+        CancellationToken ct = default)
+    {
+        await DeleteAsync($"/events/{eventId}", adminPin, ct);
+    }
 }

@@ -258,6 +258,33 @@ public class EventsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Deletes an event.
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <returns>Success response.</returns>
+    [HttpDelete("{eventId:guid}")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteEvent(Guid eventId)
+    {
+        var battleEvent = await _dbContext.BattleEvents
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+
+        if (battleEvent is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Event not found"));
+        }
+
+        _dbContext.BattleEvents.Remove(battleEvent);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Deleted event {EventId} with title {Title}", eventId, battleEvent.Title);
+
+        return NoContent();
+    }
+
     private static EventResponse MapToResponse(BattleEvent battleEvent)
     {
         return new EventResponse

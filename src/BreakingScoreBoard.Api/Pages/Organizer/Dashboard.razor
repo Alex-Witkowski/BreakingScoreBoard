@@ -3,8 +3,10 @@
 @using BreakingScoreBoard.Api.Models
 @using BreakingScoreBoard.Api.Services
 @using BreakingScoreBoard.Api.Contracts.Events
+@using BreakingScoreBoard.Api.Components
 @inject EventsApiClient EventsApi
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -118,6 +120,12 @@
                                                Href="@($"/judge/scoring?eventId={evt.Id}")"
                                                @onclick:stopPropagation="true" />
                             </MudTooltip>
+                            <MudTooltip Text="Delete Event">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Size="Size.Small" 
+                                               Color="Color.Error"
+                                               OnClick="@(async () => await DeleteEventAsync(evt))" />
+                            </MudTooltip>
                         </div>
                     </div>
                 </div>
@@ -181,7 +189,6 @@
             Snackbar.Add($"Event '{createdEvent.Title}' created successfully!", Severity.Success);
             model = new CreateEventViewModel(); // Reset form
             await LoadEvents(); // Refresh list
-            StateHasChanged(); // Force UI update
         }
         catch (Exception ex)
         {
@@ -190,6 +197,40 @@
         finally
         {
             isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteEventAsync(EventResponse evt)
+    {
+        var parameters = new DialogParameters
+        {
+            { nameof(DeleteEventDialog.EventTitle), evt.Title }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteEventDialog>("Confirm Delete", parameters);
+        var result = await dialog.Result;
+
+        if (result.Canceled)
+        {
+            return;
+        }
+
+        var adminPin = result.Data?.ToString();
+        if (string.IsNullOrEmpty(adminPin))
+        {
+            Snackbar.Add("Admin PIN is required", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            await EventsApi.DeleteEventAsync(evt.Id, adminPin);
+            Snackbar.Add($"Event '{evt.Title}' deleted successfully!", Severity.Success);
+            await LoadEvents(); // Refresh list
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
 
