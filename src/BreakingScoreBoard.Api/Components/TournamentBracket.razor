@@ -7,7 +7,7 @@
         <!-- Event Header -->
         <div class="bracket-event-header">
             <div class="bracket-event-info">
-                <span class="bracket-stage">TOP8 - Knock-Out</span>
+                <span class="bracket-stage">@GetBracketStage()</span>
             </div>
             <div class="bracket-event-logo">
                 <div class="logo-circle">
@@ -24,8 +24,8 @@
             </div>
         </div>
 
-        var top8Battles = CategoryBracket.Rounds.ContainsKey(BracketLevel.Top8) ? CategoryBracket.Rounds[BracketLevel.Top8] : new List<BracketMatchup>();
-        var top4Battles = CategoryBracket.Rounds.ContainsKey(BracketLevel.Top4) ? CategoryBracket.Rounds[BracketLevel.Top4] : new List<BracketMatchup>();
+        var top8Battles = CategoryBracket.Rounds.ContainsKey(BracketLevel.Top8) ? CategoryBracket.Rounds[BracketLevel.Top8].OrderBy(b => b.BattleId).ToList() : new List<BracketMatchup>();
+        var top4Battles = CategoryBracket.Rounds.ContainsKey(BracketLevel.Top4) ? CategoryBracket.Rounds[BracketLevel.Top4].OrderBy(b => b.BattleId).ToList() : new List<BracketMatchup>();
         var finalBattle = CategoryBracket.Rounds.ContainsKey(BracketLevel.Final) ? CategoryBracket.Rounds[BracketLevel.Final].FirstOrDefault() : null;
 
         <!-- Bracket Visualization -->
@@ -52,9 +52,9 @@
 
                 <!-- Semi Finals Left -->
                 <div class="bracket-column bracket-semi">
-                    @for (int i = 0; i < Math.Min(2, top4Battles.Count); i++)
+                    @if (top4Battles.Count > 0)
                     {
-                        var battle = top4Battles[i];
+                        var battle = top4Battles[0];
                         <div class="bracket-match">
                             <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
                                 <span class="flag">🇩🇪</span>
@@ -96,9 +96,9 @@
             <div class="bracket-side bracket-right">
                 <!-- Semi Finals Right -->
                 <div class="bracket-column bracket-semi">
-                    @for (int i = 2; i < Math.Min(4, top4Battles.Count); i++)
+                    @if (top4Battles.Count > 1)
                     {
-                        var battle = top4Battles[i];
+                        var battle = top4Battles[1];
                         <div class="bracket-match">
                             <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
                                 <span class="name">@(battle.Breaker1?.Name ?? "TBD")</span>
@@ -144,4 +144,24 @@
 @code {
     [Parameter]
     public CategoryBracketResponse? CategoryBracket { get; set; }
+
+    private string GetBracketStage()
+    {
+        if (CategoryBracket?.Rounds == null || !CategoryBracket.Rounds.Any())
+            return "Tournament Bracket";
+
+        // Determine the highest level (earliest round) in the bracket
+        var highestLevel = CategoryBracket.Rounds.Keys.OrderByDescending(k => (int)k).FirstOrDefault();
+
+        return highestLevel switch
+        {
+            BracketLevel.Top64 => "TOP64 - Knock-Out",
+            BracketLevel.Top32 => "TOP32 - Knock-Out",
+            BracketLevel.Top16 => "TOP16 - Knock-Out",
+            BracketLevel.Top8 => "TOP8 - Knock-Out",
+            BracketLevel.Top4 => "TOP4 - Semi-Finals",
+            BracketLevel.Final => "Finals",
+            _ => "Tournament Bracket"
+        };
+    }
 }
