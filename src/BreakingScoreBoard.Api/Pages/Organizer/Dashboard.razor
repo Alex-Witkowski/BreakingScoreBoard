@@ -189,7 +189,6 @@
             Snackbar.Add($"Event '{createdEvent.Title}' created successfully!", Severity.Success);
             model = new CreateEventViewModel(); // Reset form
             await LoadEvents(); // Refresh list
-            StateHasChanged(); // Force UI update
         }
         catch (Exception ex)
         {
@@ -228,7 +227,6 @@
             await EventsApi.DeleteEventAsync(evt.Id, adminPin);
             Snackbar.Add($"Event '{evt.Title}' deleted successfully!", Severity.Success);
             await LoadEvents(); // Refresh list
-            StateHasChanged(); // Force UI update
         }
         catch (Exception ex)
         {
