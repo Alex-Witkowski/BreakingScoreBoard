@@ -4,69 +4,60 @@
 @inject EventsApiClient EventsApi
 @inject ISnackbar Snackbar
 
-<MudDialog>
+<MudDialog Style="background: rgba(30, 30, 35, 0.98); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);">
     <DialogContent>
+        <MudText Style="color: white; font-size: 1.2rem; margin-bottom: 24px; font-weight: 300;">
+            Edit Event Details
+        </MudText>
+        
         <MudForm @ref="form" @bind-IsValid="@isFormValid">
-            <MudGrid Spacing="3">
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="model.Title"
-                                  Label="Event Title"
-                                  Variant="Variant.Outlined"
-                                  Required="true"
-                                  MaxLength="200"
-                                  Counter="200"
-                                  Immediate="true"
-                                  HelperText="The name of your breaking competition" />
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudDatePicker @bind-Date="datePickerValue"
-                                   Label="Event Date"
-                                   Variant="Variant.Outlined"
-                                   Required="true"
-                                   Editable="true"
-                                   DateFormat="dd.MM.yyyy"
-                                   HelperText="Date of the competition" />
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="model.Location"
-                                  Label="Location"
-                                  Variant="Variant.Outlined"
-                                  MaxLength="500"
-                                  Counter="500"
-                                  Immediate="true"
-                                  HelperText="Venue name or address (optional)" />
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudDivider />
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudAlert Severity="Severity.Info" Dense="true">
-                        Admin PIN is required to save changes
-                    </MudAlert>
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="model.AdminPin"
-                                  Label="Admin PIN"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Password"
-                                  Required="true"
-                                  HelperText="Enter your admin PIN to authenticate" />
-                </MudItem>
-            </MudGrid>
+            <MudTextField @bind-Value="model.Title"
+                          Label="Event Title"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          MaxLength="200"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudDatePicker @bind-Date="datePickerValue"
+                           Label="Event Date"
+                           Variant="Variant.Outlined"
+                           Required="true"
+                           Editable="true"
+                           DateFormat="dd.MM.yyyy"
+                           Class="mb-4"
+                           Style="font-size: 1.1rem;" />
+            
+            <MudTextField @bind-Value="model.Location"
+                          Label="Location (optional)"
+                          Variant="Variant.Outlined"
+                          MaxLength="500"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudText Style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin-bottom: 12px; margin-top: 16px;">
+                Enter your admin PIN to save changes
+            </MudText>
+            
+            <MudTextField @bind-Value="model.AdminPin"
+                          Label="Admin PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Style="font-size: 1.1rem;" />
         </MudForm>
     </DialogContent>
     
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Cancel" 
+                   Style="color: rgba(255, 255, 255, 0.7); text-transform: none; font-size: 1rem;">
+            Cancel
+        </MudButton>
         <MudButton OnClick="Submit" 
                    Variant="Variant.Filled"
                    Color="Color.Primary"
-                   Disabled="@(!isFormValid || isSaving)">
+                   Disabled="@(!isFormValid || isSaving)"
+                   Style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); color: white; font-size: 1rem; text-transform: none; font-weight: 500;">
             @if (isSaving)
             {
                 <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />

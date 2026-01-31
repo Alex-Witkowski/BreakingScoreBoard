@@ -6,58 +6,58 @@
 @inject HttpClient HttpClient
 @inject ISnackbar Snackbar
 
-<MudDialog>
+<MudDialog Style="background: rgba(30, 30, 35, 0.98); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);">
     <DialogContent>
+        <MudText Style="color: white; font-size: 1.2rem; margin-bottom: 16px; font-weight: 300;">
+            Regenerate Judge PIN
+        </MudText>
+        
+        <MudText Style="color: #ff9800; font-size: 0.95rem; margin-bottom: 24px;">
+            ⚠️ This will invalidate the current judge PIN. All judges will need to use the new PIN.
+        </MudText>
+        
         <MudForm @ref="form" @bind-IsValid="@isFormValid">
-            <MudGrid Spacing="3">
-                <MudItem xs="12">
-                    <MudAlert Severity="Severity.Warning" Dense="true">
-                        Regenerating the judge PIN will invalidate the current one. All judges will need to use the new PIN.
-                    </MudAlert>
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="model.NewJudgePin"
-                                  Label="New Judge PIN"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Password"
-                                  Required="true"
-                                  HelperText="Enter a new PIN for judges (minimum 4 characters)"
-                                  Validation="@(new Func<string, string?>(ValidateJudgePin))" />
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="confirmJudgePin"
-                                  Label="Confirm New Judge PIN"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Password"
-                                  Required="true"
-                                  HelperText="Re-enter the new judge PIN"
-                                  Validation="@(new Func<string, string?>(ValidateConfirmPin))" />
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudDivider />
-                </MudItem>
-                
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="model.AdminPin"
-                                  Label="Admin PIN"
-                                  Variant="Variant.Outlined"
-                                  InputType="InputType.Password"
-                                  Required="true"
-                                  HelperText="Enter your admin PIN to authenticate" />
-                </MudItem>
-            </MudGrid>
+            <MudTextField @bind-Value="model.NewJudgePin"
+                          Label="New Judge PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;"
+                          Validation="@(new Func<string, string?>(ValidateJudgePin))" />
+            
+            <MudTextField @bind-Value="confirmJudgePin"
+                          Label="Confirm New Judge PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;"
+                          Validation="@(new Func<string, string?>(ValidateConfirmPin))" />
+            
+            <MudText Style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin-bottom: 12px; margin-top: 16px;">
+                Enter your admin PIN to confirm
+            </MudText>
+            
+            <MudTextField @bind-Value="model.AdminPin"
+                          Label="Admin PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Style="font-size: 1.1rem;" />
         </MudForm>
     </DialogContent>
     
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Cancel" 
+                   Style="color: rgba(255, 255, 255, 0.7); text-transform: none; font-size: 1rem;">
+            Cancel
+        </MudButton>
         <MudButton OnClick="Submit" 
                    Variant="Variant.Filled"
                    Color="Color.Warning"
-                   Disabled="@(!isFormValid || isSaving)">
+                   Disabled="@(!isFormValid || isSaving)"
+                   Style="background: linear-gradient(135deg, #f57c00 0%, #e65100 100%); color: white; font-size: 1rem; text-transform: none; font-weight: 500;">
             @if (isSaving)
             {
                 <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
@@ -65,7 +65,7 @@
             }
             else
             {
-                <span>Regenerate Judge PIN</span>
+                <span>Regenerate PIN</span>
             }
         </MudButton>
     </DialogActions>
