@@ -1,0 +1,37 @@
+<MudDialog>
+    <DialogContent>
+        <MudText>Are you sure you want to delete the event <strong>@EventTitle</strong>?</MudText>
+        <MudText Class="mt-2" Typo="Typo.body2" Color="Color.Error">This action cannot be undone.</MudText>
+        
+        <MudTextField @bind-Value="adminPin"
+                      Label="Admin PIN"
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Password"
+                      Required="true"
+                      Class="mt-4" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Submit" Disabled="@string.IsNullOrEmpty(adminPin)">Delete</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? Dialog { get; set; }
+
+    [Parameter]
+    public string EventTitle { get; set; } = string.Empty;
+
+    private string adminPin = string.Empty;
+
+    private void Submit()
+    {
+        Dialog?.Close(DialogResult.Ok(adminPin));
+    }
+
+    private void Cancel()
+    {
+        Dialog?.Cancel();
+    }
+}
