@@ -2,271 +2,140 @@
 @rendermode InteractiveServer
 @using BreakingScoreBoard.Api.Models
 @using BreakingScoreBoard.Api.Services
+@using BreakingScoreBoard.Api.Contracts.Events
 @inject EventsApiClient EventsApi
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>Organizer Dashboard</PageTitle>
 
-<MudText Typo="Typo.h3" Class="mb-6">
-    <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2" />
-    Organizer Dashboard
-</MudText>
+<div class="dashboard-container">
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="nav-tab active">Create Breakdance Battle</button>
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/judge/scoring")'>Judge Scoring</button>
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/spectator/scoreboard")'>Spectator Scoreboard</button>
+    </div>
 
-<MudGrid>
     <!-- Create Event Form -->
-    <MudItem xs="12" md="5">
-        <MudPaper Elevation="2" Class="pa-4">
-            <MudText Typo="Typo.h5" Class="mb-4">Create New Event</MudText>
+    <MudPaper Class="form-panel pa-6">
+        <EditForm Model="@model" OnValidSubmit="@CreateEvent">
+            <DataAnnotationsValidator />
             
-            <EditForm Model="@model" OnValidSubmit="@CreateEvent">
-                <DataAnnotationsValidator />
-                
-                <MudTextField @bind-Value="model.Title" 
-                              Label="Event Title" 
-                              Variant="Variant.Outlined"
-                              Required="true"
-                              Class="mb-3" />
-                
-                <MudTextField @bind-Value="model.Location" 
-                              Label="Location" 
-                              Variant="Variant.Outlined"
-                              Class="mb-3" />
-                
-                <MudDatePicker @bind-Date="model.EventDateNullable" 
-                               Label="Event Date" 
-                               Variant="Variant.Outlined"
-                               Required="true"
-                               Class="mb-3" />
-                
-                <MudSelect @bind-Value="model.JudgeCount" 
-                           Label="Number of Judges" 
+            <MudTextField @bind-Value="model.Title" 
+                          Label="Event Titel" 
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudTextField @bind-Value="model.Location" 
+                          Label="Location" 
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudDatePicker @bind-Date="model.EventDateNullable" 
+                           Label="Datum" 
                            Variant="Variant.Outlined"
-                           Class="mb-3">
-                    <MudSelectItem Value="3">3 Judges</MudSelectItem>
-                    <MudSelectItem Value="5">5 Judges</MudSelectItem>
-                </MudSelect>
-                
-                <MudTextField @bind-Value="model.AdminPin" 
-                              Label="Admin PIN" 
-                              Variant="Variant.Outlined"
-                              InputType="InputType.Password"
-                              Required="true"
-                              Class="mb-3" />
-                
-                <MudTextField @bind-Value="model.JudgePin" 
-                              Label="Judge PIN" 
-                              Variant="Variant.Outlined"
-                              InputType="InputType.Password"
-                              Required="true"
-                              Class="mb-3" />
-                
-                <MudButton ButtonType="ButtonType.Submit" 
-                           Variant="Variant.Filled" 
-                           Color="Color.Primary" 
-                           FullWidth="true"
-                           Disabled="@isSubmitting">
-                    @if (isSubmitting)
-                    {
-                        <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
-                        <span>Creating...</span>
-                    }
-                    else
-                    {
-                        <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" />
-                        <span>Create Event</span>
-                    }
-                </MudButton>
-            </EditForm>
-        </MudPaper>
-    </MudItem>
-
-    <!-- Quick Links & Last Created Event -->
-    <MudItem xs="12" md="7">
-        <MudPaper Elevation="2" Class="pa-4 mb-4">
-            <MudText Typo="Typo.h6" Class="mb-3">Quick Links</MudText>
-            <MudStack Spacing="2">
-                <MudButton Href="/swagger" 
-                           Target="_blank"
-                           Variant="Variant.Outlined" 
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Api"
-                           FullWidth="true">
-                    API Documentation
-                </MudButton>
-                <MudButton Href="/judge/scoring" 
-                           Variant="Variant.Outlined" 
-                           Color="Color.Success"
-                           StartIcon="@Icons.Material.Filled.Star"
-                           FullWidth="true">
-                    Judge Scoring Page
-                </MudButton>
-                <MudButton Href="/spectator/scoreboard" 
-                           Variant="Variant.Outlined" 
-                           Color="Color.Info"
-                           StartIcon="@Icons.Material.Filled.Tv"
-                           FullWidth="true">
-                    Spectator Scoreboard
-                </MudButton>
-            </MudStack>
-        </MudPaper>
-
-        @if (lastCreatedEvent != null)
-        {
-            <MudPaper Elevation="2" Class="pa-4">
-                <MudText Typo="Typo.h6" Color="Color.Success" Class="mb-3">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
-                    Last Created Event
-                </MudText>
-                <MudSimpleTable Dense="true">
-                    <tbody>
-                        <tr>
-                            <td><strong>Event ID:</strong></td>
-                            <td><code>@lastCreatedEvent.Id</code></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Title:</strong></td>
-                            <td>@lastCreatedEvent.Title</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Date:</strong></td>
-                            <td>@lastCreatedEvent.EventDate.ToString("MMMM dd, yyyy")</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Location:</strong></td>
-                            <td>@(lastCreatedEvent.Location ?? "Not specified")</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Registration:</strong></td>
-                            <td>
-                                <MudChip T="string" Size="Size.Small" 
-                                         Color="@(lastCreatedEvent.RegistrationOpen ? Color.Success : Color.Default)">
-                                    @(lastCreatedEvent.RegistrationOpen ? "Open" : "Closed")
-                                </MudChip>
-                            </td>
-                        </tr>
-                    </tbody>
-                </MudSimpleTable>
-            </MudPaper>
-        }
-    </MudItem>
-
-    <!-- All Events Table -->
-    <MudItem xs="12">
-        <MudPaper Elevation="2" Class="pa-4">
-            <MudText Typo="Typo.h5" Class="mb-4">All Events</MudText>
+                           Required="true"
+                           Class="mb-4"
+                           Style="font-size: 1.1rem;" />
             
-            @if (isLoadingEvents)
-            {
-                <MudProgressLinear Indeterminate="true" Class="mb-4" />
-            }
+            <MudSelect @bind-Value="model.JudgeCount" 
+                       Label="Number of Judges: 3 oder 5" 
+                       Variant="Variant.Outlined"
+                       Class="mb-4"
+                       Style="font-size: 1.1rem;">
+                <MudSelectItem Value="3">3 Judges</MudSelectItem>
+                <MudSelectItem Value="5">5 Judges</MudSelectItem>
+            </MudSelect>
             
-            @if (events.Any())
-            {
-                <MudTable Items="@events" Hover="true" Breakpoint="Breakpoint.Sm">
-                    <HeaderContent>
-                        <MudTh>Event ID</MudTh>
-                        <MudTh>Title</MudTh>
-                        <MudTh>Date</MudTh>
-                        <MudTh>Location</MudTh>
-                        <MudTh>Registration</MudTh>
-                        <MudTh>Judges</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Event ID"><code>@context.Id.ToString()[..8]...</code></MudTd>
-                        <MudTd DataLabel="Title"><strong>@context.Title</strong></MudTd>
-                        <MudTd DataLabel="Date">@context.EventDate.ToString("MMM dd, yyyy")</MudTd>
-                        <MudTd DataLabel="Location">@(context.Location ?? "—")</MudTd>
-                        <MudTd DataLabel="Registration">
-                            <MudChip T="string" Size="Size.Small" 
-                                     Color="@(context.RegistrationOpen ? Color.Success : Color.Default)">
-                                @(context.RegistrationOpen ? "Open" : "Closed")
-                            </MudChip>
-                        </MudTd>
-                        <MudTd DataLabel="Judges">@context.JudgeCount</MudTd>
-                    </RowTemplate>
-                </MudTable>
+            <MudTextField @bind-Value="model.JudgePin" 
+                          Label="Judge PIN" 
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudTextField @bind-Value="model.AdminPin" 
+                          Label="Admin PIN" 
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Class="mb-5"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudButton ButtonType="ButtonType.Submit" 
+                       Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       FullWidth="true"
+                       Class="submit-button"
+                       Disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                    <span>Creating...</span>
+                }
+                else
+                {
+                    <span>Event Erstellen</span>
+                }
+            </MudButton>
+        </EditForm>
+    </MudPaper>
 
-                @if (totalPages > 1)
-                {
-                    <div class="d-flex justify-center mt-4">
-                        <MudPagination Count="@totalPages" 
-                                       Selected="@currentPage" 
-                                       SelectedChanged="@ChangePage" 
-                                       ShowFirstButton="true" 
-                                       ShowLastButton="true" />
-                    </div>
-                    <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
-                        Page @currentPage of @totalPages (Total: @totalEvents events)
-                    </MudText>
-                }
-                else if (totalEvents > 0)
-                {
-                    <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
-                        Showing @totalEvents event@(totalEvents != 1 ? "s" : "")
-                    </MudText>
-                }
-            }
-            else if (!isLoadingEvents)
+    <!-- Existing Events List -->
+    @if (events.Any())
+    {
+        <div class="event-list">
+            <div class="event-list-header">
+                Existing Events
+            </div>
+            @foreach (var evt in events.Take(5))
             {
-                <div class="text-center py-8">
-                    <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Color="Color.Default" />
-                    <MudText Typo="Typo.body1" Class="mt-2">No events found. Create your first event above!</MudText>
+                <div class="event-item" @onclick='() => Navigation.NavigateTo($"/events/{evt.Id}")'>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="mr-2" />
+                    @evt.Title - @evt.Location - @evt.EventDate.ToString("dd.MM.yyyy")
                 </div>
             }
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+        </div>
+    }
+</div>
 
 @code {
     private CreateEventViewModel model = new();
-    private EventResponse? lastCreatedEvent;
     private bool isSubmitting = false;
-    
     private List<EventResponse> events = new();
-    private bool isLoadingEvents = false;
-    private int currentPage = 1;
-    private int pageSize = 10;
-    private int totalEvents = 0;
-    private int totalPages => (int)Math.Ceiling((double)totalEvents / pageSize);
+    private System.Threading.Timer? refreshTimer;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadEvents();
+        
+        // Auto-refresh events every 30 seconds
+        refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadEvents();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
 
     private async Task LoadEvents()
     {
-        isLoadingEvents = true;
-        StateHasChanged();
-        
         try
         {
-            var allEvents = await EventsApi.GetEventsAsync();
-            totalEvents = allEvents.Count;
-            events = allEvents
-                .OrderByDescending(e => e.EventDate)
-                .Skip((currentPage - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var eventsList = await EventsApi.GetEventsAsync();
+            events = eventsList.OrderByDescending(e => e.EventDate).ToList();
         }
-        catch (Exception ex)
+        catch
         {
-            Snackbar.Add($"Failed to load events: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            isLoadingEvents = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task ChangePage(int newPage)
-    {
-        if (newPage >= 1 && newPage <= totalPages)
-        {
-            currentPage = newPage;
-            await LoadEvents();
+            // Silent fail on background refresh
         }
     }
 
@@ -286,15 +155,14 @@
                 JudgePin = model.JudgePin
             };
 
-            lastCreatedEvent = await EventsApi.CreateEventAsync(request);
-            Snackbar.Add($"🎉 Event '{lastCreatedEvent.Title}' created successfully!", Severity.Success);
-            
+            var createdEvent = await EventsApi.CreateEventAsync(request);
+            Snackbar.Add($"Event '{createdEvent.Title}' created successfully!", Severity.Success);
             model = new CreateEventViewModel(); // Reset form
-            await LoadEvents(); // Refresh the events list
+            await LoadEvents(); // Refresh list
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error creating event: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -304,6 +172,6 @@
 
     public void Dispose()
     {
-        // No resources to dispose in this version
+        refreshTimer?.Dispose();
     }
 }

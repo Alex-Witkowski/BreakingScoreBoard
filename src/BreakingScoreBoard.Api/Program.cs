@@ -137,6 +137,8 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 
+app.UseStaticFiles(); // Enable static files (CSS, JS, images)
+
 app.UseRouting();
 app.UseAntiforgery();
 
