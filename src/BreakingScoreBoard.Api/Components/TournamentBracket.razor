@@ -25,14 +25,14 @@
         </div>
 
         var highestLevel = CategoryBracket.Rounds.Keys.OrderByDescending(k => (int)k).FirstOrDefault();
-        var quarterFinalsBattles = CategoryBracket.Rounds.ContainsKey(highestLevel) && highestLevel >= BracketLevel.Top8 
+        var firstRoundBattles = CategoryBracket.Rounds.ContainsKey(highestLevel) && highestLevel >= BracketLevel.Top8 
             ? CategoryBracket.Rounds[highestLevel].OrderBy(b => b.BattleId).ToList() 
             : new List<BracketMatchup>();
         var top4Battles = CategoryBracket.Rounds.ContainsKey(BracketLevel.Top4) ? CategoryBracket.Rounds[BracketLevel.Top4].OrderBy(b => b.BattleId).ToList() : new List<BracketMatchup>();
         var finalBattle = CategoryBracket.Rounds.ContainsKey(BracketLevel.Final) ? CategoryBracket.Rounds[BracketLevel.Final].FirstOrDefault() : null;
 
         // Calculate how many matches go on each side
-        int halfwayPoint = quarterFinalsBattles.Count / 2;
+        int halfwayPoint = firstRoundBattles.Count / 2;
 
         <!-- Bracket Visualization -->
         <div class="bracket-tree">
@@ -42,7 +42,7 @@
                 <div class="bracket-column bracket-quarter">
                     @for (int i = 0; i < halfwayPoint; i++)
                     {
-                        var battle = quarterFinalsBattles[i];
+                        var battle = firstRoundBattles[i];
                         <div class="bracket-match">
                             <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
                                 <span class="flag">🇩🇪</span>
@@ -120,9 +120,9 @@
 
                 <!-- Quarter Finals Right -->
                 <div class="bracket-column bracket-quarter">
-                    @for (int i = halfwayPoint; i < quarterFinalsBattles.Count; i++)
+                    @for (int i = halfwayPoint; i < firstRoundBattles.Count; i++)
                     {
-                        var battle = quarterFinalsBattles[i];
+                        var battle = firstRoundBattles[i];
                         <div class="bracket-match">
                             <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
                                 <span class="name">@(battle.Breaker1?.Name ?? "TBD")</span>
