@@ -43,16 +43,15 @@
                               Placeholder="2026-02-15"
                               Required="true"
                               Style="font-size: 1.1rem;" />
-            </div>
+           </div>
             
-            <MudSelect @bind-Value="model.JudgeCount" 
-                       Label="Number of Judges: 3 oder 5" 
-                       Variant="Variant.Outlined"
-                       Class="mb-4"
-                       Style="font-size: 1.1rem;">
-                <MudSelectItem Value="3">3 Judges</MudSelectItem>
-                <MudSelectItem Value="5">5 Judges</MudSelectItem>
-            </MudSelect>
+            <div class="mb-4">
+                <label for="judgeCount" style="display: block; margin-bottom: 8px; font-size: 0.875rem; color: #888;">Number of Judges: 3 oder 5</label>
+                <select @bind="model.JudgeCount" id="judgeCount" style="width: 100%; padding: 16.5px 14px; font-size: 1.1rem; border: 1px solid #444; background: #1e1e23; color: #fff; border-radius: 4px;">
+                    <option value="3">3 Judges</option>
+                    <option value="5">5 Judges</option>
+                </select>
+            </div>
             
             <MudTextField @bind-Value="model.JudgePin" 
                           Label="Judge PIN" 
