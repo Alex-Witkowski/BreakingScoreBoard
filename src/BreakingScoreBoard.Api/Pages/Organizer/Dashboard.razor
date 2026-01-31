@@ -36,12 +36,14 @@
                           Class="mb-4"
                           Style="font-size: 1.1rem;" />
             
-            <MudDatePicker @bind-Date="model.EventDateNullable" 
-                           Label="Datum" 
-                           Variant="Variant.Outlined"
-                           Required="true"
-                           Class="mb-4"
-                           Style="font-size: 1.1rem;" />
+            <div class="mb-4">
+                <MudTextField @bind-Value="model.EventDateString" 
+                              Label="Datum (YYYY-MM-DD)" 
+                              Variant="Variant.Outlined"
+                              Placeholder="2026-02-15"
+                              Required="true"
+                              Style="font-size: 1.1rem;" />
+            </div>
             
             <MudSelect @bind-Value="model.JudgeCount" 
                        Label="Number of Judges: 3 oder 5" 
@@ -160,6 +162,7 @@
             Snackbar.Add($"Event '{createdEvent.Title}' created successfully!", Severity.Success);
             model = new CreateEventViewModel(); // Reset form
             await LoadEvents(); // Refresh list
+            StateHasChanged(); // Force UI update
         }
         catch (Exception ex)
         {

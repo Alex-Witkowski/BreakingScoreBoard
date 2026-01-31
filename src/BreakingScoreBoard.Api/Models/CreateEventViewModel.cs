@@ -15,6 +15,21 @@ public class CreateEventViewModel
     public DateOnly EventDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
 
     /// <summary>
+    /// String representation for text input
+    /// </summary>
+    public string EventDateString
+    {
+        get => EventDate.ToString("yyyy-MM-dd");
+        set
+        {
+            if (DateOnly.TryParse(value, out var date))
+            {
+                EventDate = date;
+            }
+        }
+    }
+
+    /// <summary>
     /// Nullable DateTime for MudBlazor DatePicker compatibility
     /// </summary>
     public DateTime? EventDateNullable 
