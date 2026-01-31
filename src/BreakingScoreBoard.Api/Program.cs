@@ -1,9 +1,11 @@
 using System.Reflection;
 using BreakingScoreBoard.Api.Contracts;
 using BreakingScoreBoard.Api.Infrastructure;
+using BreakingScoreBoard.Api.Services;
 using BreakingScoreBoard.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +25,37 @@ builder.Services.AddScoped<BracketService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CorrelationIdAccessor>();
 
-// Add HttpClient for Blazor components to call API
-builder.Services.AddHttpClient();
+// Configure API base URL for HttpClient services
+var apiBaseUrl = builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "http://localhost:5000";
+
+// Add typed HttpClient services for API communication
+builder.Services.AddHttpClient<EventsApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddHttpClient<CategoriesApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddHttpClient<RegistrationsApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddHttpClient<BattlesApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddHttpClient<ScoresApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddHttpClient<PublicApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+
+// Add MudBlazor services
+builder.Services.AddMudServices();
 
 // Add Blazor Server
 builder.Services.AddRazorPages();

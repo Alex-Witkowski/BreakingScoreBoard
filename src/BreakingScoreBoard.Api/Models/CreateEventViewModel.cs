@@ -14,6 +14,15 @@ public class CreateEventViewModel
     [Required]
     public DateOnly EventDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
 
+    /// <summary>
+    /// Nullable DateTime for MudBlazor DatePicker compatibility
+    /// </summary>
+    public DateTime? EventDateNullable 
+    { 
+        get => EventDate.ToDateTime(TimeOnly.MinValue);
+        set => EventDate = value.HasValue ? DateOnly.FromDateTime(value.Value) : DateOnly.FromDateTime(DateTime.Today);
+    }
+
     [StringLength(300)]
     public string? Location { get; set; }
 
