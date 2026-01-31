@@ -112,6 +112,26 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets all events.
+    /// </summary>
+    /// <returns>A list of all events.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(List<EventResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<EventResponse>>> GetAllEvents()
+    {
+        var events = await _dbContext.BattleEvents
+            .Include(e => e.Categories)
+            .ThenInclude(c => c.Registrations)
+            .AsSplitQuery()
+            .AsNoTracking()
+            .OrderByDescending(e => e.EventDate)
+            .ToListAsync();
+
+        var response = events.Select(MapToResponse).ToList();
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Gets an event by ID.
     /// </summary>
     /// <param name="eventId">The event ID.</param>
@@ -124,6 +144,7 @@ public class EventsController : ControllerBase
         var battleEvent = await _dbContext.BattleEvents
             .Include(e => e.Categories)
             .ThenInclude(c => c.Registrations)
+            .AsSplitQuery()
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
 
@@ -151,6 +172,7 @@ public class EventsController : ControllerBase
         var battleEvent = await _dbContext.BattleEvents
             .Include(e => e.Categories)
             .ThenInclude(c => c.Registrations)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (battleEvent is null)
