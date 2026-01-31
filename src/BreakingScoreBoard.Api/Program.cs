@@ -41,6 +41,10 @@ builder.Services.AddHttpClient<RegistrationsApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
+builder.Services.AddHttpClient<BreakersApiClient>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
 builder.Services.AddHttpClient<BattlesApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);

@@ -16,12 +16,14 @@ public class RegistrationsApiClient : ApiClientBase
     /// Register a breaker for a category
     /// </summary>
     public async Task<RegistrationResponse> RegisterBreakerAsync(
+        Guid eventId,
+        Guid categoryId,
         RegisterBreakerRequest request,
         string adminPin,
         CancellationToken ct = default)
     {
         return await PostAsync<RegisterBreakerRequest, RegistrationResponse>(
-            "/registrations",
+            $"/events/{eventId}/categories/{categoryId}/registrations",
             request,
             adminPin,
             ct);
@@ -37,6 +39,18 @@ public class RegistrationsApiClient : ApiClientBase
     {
         return await GetAsync<List<RegistrationResponse>>(
             $"/events/{eventId}/categories/{categoryId}/registrations",
+            ct);
+    }
+
+    /// <summary>
+    /// Get all registrations for a specific event across all categories
+    /// </summary>
+    public async Task<List<RegistrationResponse>> GetRegistrationsForEventAsync(
+        Guid eventId,
+        CancellationToken ct = default)
+    {
+        return await GetAsync<List<RegistrationResponse>>(
+            $"/events/{eventId}/registrations",
             ct);
     }
 }

@@ -11,7 +11,6 @@ namespace BreakingScoreBoard.Api.Controllers;
 /// Manages breaker registrations for event categories.
 /// </summary>
 [ApiController]
-[Route("events/{eventId:guid}/categories/{categoryId:guid}/registrations")]
 [Produces("application/json")]
 public class RegistrationsController : ControllerBase
 {
@@ -32,7 +31,7 @@ public class RegistrationsController : ControllerBase
     /// <response code="201">Registration created successfully</response>
     /// <response code="400">Invalid age or birth date</response>
     /// <response code="404">Event or category not found</response>
-    [HttpPost]
+    [HttpPost("events/{eventId:guid}/categories/{categoryId:guid}/registrations")]
     [ProducesResponseType(typeof(RegistrationResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -101,8 +100,12 @@ public class RegistrationsController : ControllerBase
         Breaker breaker;
         if (existingBreaker is not null)
         {
-            // Breaker already exists, use existing
+            // Breaker already exists, update display name if provided
             breaker = existingBreaker;
+            if (!string.IsNullOrWhiteSpace(request.BattleName))
+            {
+                breaker.DisplayName = request.BattleName;
+            }
         }
         else
         {
@@ -111,6 +114,7 @@ public class RegistrationsController : ControllerBase
             {
                 Id = Guid.NewGuid(),
                 Name = request.Name,
+                DisplayName = request.BattleName,
                 BirthDate = request.BirthDate
             };
             _context.Breakers.Add(breaker);
@@ -150,6 +154,7 @@ public class RegistrationsController : ControllerBase
             Id = registration.Id,
             BreakerId = breaker.Id,
             BreakerName = breaker.Name,
+            BattleName = breaker.DisplayName,
             Age = age,
             Status = registration.Status,
             RegisteredAt = registration.RegisteredAt
@@ -170,7 +175,7 @@ public class RegistrationsController : ControllerBase
     /// <returns>Registration details</returns>
     /// <response code="200">Registration found</response>
     /// <response code="404">Registration not found</response>
-    [HttpGet("{breakerId:guid}", Name = nameof(GetRegistration))]
+    [HttpGet("events/{eventId:guid}/categories/{categoryId:guid}/registrations/{breakerId:guid}", Name = nameof(GetRegistration))]
     [ProducesResponseType(typeof(RegistrationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetRegistration(
@@ -199,6 +204,7 @@ public class RegistrationsController : ControllerBase
             Id = registration.Id,
             BreakerId = registration.BreakerId,
             BreakerName = registration.Breaker.Name,
+            BattleName = registration.Breaker.DisplayName,
             Age = age,
             Status = registration.Status,
             RegisteredAt = registration.RegisteredAt
@@ -206,4 +212,45 @@ public class RegistrationsController : ControllerBase
 
         return Ok(response);
     }
-}
+
+    /// <summary>
+    /// Get all registrations for an event across all categories.
+    /// </summary>
+    /// <param name="eventId">Event ID</param>
+    /// <returns>List of registrations for the event</returns>
+    /// <response code="200">List of registrations</response>
+    /// <response code="404">Event not found</response>
+    [HttpGet("events/{eventId:guid}/registrations")]
+    [ProducesResponseType(typeof(List<RegistrationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetEventRegistrations(Guid eventId)
+    {
+        // Validate event exists
+        var battleEvent = await _context.BattleEvents
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+
+        if (battleEvent is null)
+        {
+            return NotFound(new { message = "Event not found" });
+        }
+
+        var registrations = await _context.Registrations
+            .Include(r => r.Breaker)
+            .Include(r => r.Category)
+            .ThenInclude(c => c.Event)
+            .Where(r => r.Category.EventId == eventId && r.Category.CurrentPhase == CategoryPhase.Registration)
+            .OrderByDescending(r => r.RegisteredAt)
+            .Select(r => new RegistrationResponse
+            {
+                Id = r.Id,
+                BreakerId = r.BreakerId,
+                BreakerName = r.Breaker.Name,
+                BattleName = r.Breaker.DisplayName,
+                Age = r.Breaker.GetAgeAtDate(battleEvent.EventDate),
+                Status = r.Status,
+                RegisteredAt = r.RegisteredAt
+            })
+            .ToListAsync();
+
+        return Ok(registrations);
+    }}

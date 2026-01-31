@@ -257,6 +257,13 @@
             </MudButton>
             
             <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick='() => Navigation.NavigateTo($"/events/{eventData.Id}/register")'
+                       StartIcon="@Icons.Material.Filled.PersonAdd">
+                Register Dancers
+            </MudButton>
+            
+            <MudButton Variant="Variant.Filled" 
                        Color="Color.Info" 
                        OnClick='() => Navigation.NavigateTo($"/spectator/scoreboard?eventId={eventData.Id}")'
                        StartIcon="@Icons.Material.Filled.Tv">

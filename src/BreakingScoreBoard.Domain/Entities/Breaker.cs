@@ -7,8 +7,11 @@ public class Breaker
 {
     public Guid Id { get; set; }
 
-    /// <summary>Display name.</summary>
+    /// <summary>Legal name.</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>Battle name (display name used in competitions).</summary>
+    public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>Date of birth for age calculation.</summary>
     public DateOnly BirthDate { get; set; }

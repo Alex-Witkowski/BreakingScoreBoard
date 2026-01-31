@@ -364,6 +364,7 @@ public class CategoriesController : ControllerBase
                 Id = r.Id,
                 BreakerId = r.BreakerId,
                 BreakerName = r.Breaker.Name,
+                BattleName = r.Breaker.DisplayName,
                 Age = r.Breaker.GetAgeAtDate(category.Event.EventDate),
                 Status = r.Status,
                 RegisteredAt = r.RegisteredAt

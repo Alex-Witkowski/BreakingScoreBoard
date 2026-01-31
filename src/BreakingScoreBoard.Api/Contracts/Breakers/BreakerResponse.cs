@@ -1,10 +1,15 @@
-namespace BreakingScoreBoard.Api.Contracts.Registrations;
+namespace BreakingScoreBoard.Api.Contracts.Breakers;
 
 /// <summary>
-/// Request to register a breaker for an event category.
+/// Response model for a breaker.
 /// </summary>
-public sealed record RegisterBreakerRequest
+public sealed record BreakerResponse
 {
+    /// <summary>
+    /// Unique identifier.
+    /// </summary>
+    public required Guid Id { get; init; }
+
     /// <summary>
     /// Breaker's legal name.
     /// </summary>
@@ -16,7 +21,12 @@ public sealed record RegisterBreakerRequest
     public required string BattleName { get; init; }
 
     /// <summary>
-    /// Breaker's birth date for age calculation.
+    /// Breaker's birth date.
     /// </summary>
     public required DateOnly BirthDate { get; init; }
+
+    /// <summary>
+    /// UTC timestamp when created.
+    /// </summary>
+    public required DateTime CreatedAt { get; init; }
 }
