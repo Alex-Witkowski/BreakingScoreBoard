@@ -4,7 +4,16 @@
 
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-336791)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+---
+
+## 📖 Documentation
+
+- **[Installation Guide](INSTALL.md)** - Comprehensive setup instructions for Linux, macOS, and Windows
+- **[Quick Start](#quick-start)** - Get up and running in minutes
+- **[API Documentation](#api-documentation)** - RESTful API reference
 
 ---
 
