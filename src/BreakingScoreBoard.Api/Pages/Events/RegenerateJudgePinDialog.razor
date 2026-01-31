@@ -1,0 +1,174 @@
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Services
+@using System.Net.Http.Json
+@using System.Text.Json
+@using System.Text
+@inject HttpClient HttpClient
+@inject ISnackbar Snackbar
+
+<MudDialog Style="background: rgba(30, 30, 35, 0.98); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);">
+    <DialogContent>
+        <MudText Style="color: white; font-size: 1.2rem; margin-bottom: 16px; font-weight: 300;">
+            Regenerate Judge PIN
+        </MudText>
+        
+        <MudText Style="color: #ff9800; font-size: 0.95rem; margin-bottom: 24px;">
+            ⚠️ This will invalidate the current judge PIN. All judges will need to use the new PIN.
+        </MudText>
+        
+        <MudForm @ref="form" @bind-IsValid="@isFormValid">
+            <MudTextField @bind-Value="model.NewJudgePin"
+                          Label="New Judge PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;"
+                          Validation="@(new Func<string, string?>(ValidateJudgePin))" />
+            
+            <MudTextField @bind-Value="confirmJudgePin"
+                          Label="Confirm New Judge PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;"
+                          Validation="@(new Func<string, string?>(ValidateConfirmPin))" />
+            
+            <MudText Style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin-bottom: 12px; margin-top: 16px;">
+                Enter your admin PIN to confirm
+            </MudText>
+            
+            <MudTextField @bind-Value="model.AdminPin"
+                          Label="Admin PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Style="font-size: 1.1rem;" />
+        </MudForm>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Style="color: rgba(255, 255, 255, 0.7); text-transform: none; font-size: 1rem;">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="Submit" 
+                   Variant="Variant.Filled"
+                   Color="Color.Warning"
+                   Disabled="@(!isFormValid || isSaving)"
+                   Style="background: linear-gradient(135deg, #f57c00 0%, #e65100 100%); color: white; font-size: 1rem; text-transform: none; font-weight: 500;">
+            @if (isSaving)
+            {
+                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                <span>Regenerating...</span>
+            }
+            else
+            {
+                <span>Regenerate PIN</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    [Parameter]
+    public Guid EventId { get; set; }
+    
+    private MudForm form = default!;
+    private bool isFormValid;
+    private bool isSaving;
+    
+    private RegenerateJudgePinModel model = new();
+    private string confirmJudgePin = string.Empty;
+    
+    private class RegenerateJudgePinModel
+    {
+        public string AdminPin { get; set; } = string.Empty;
+        public string NewJudgePin { get; set; } = string.Empty;
+    }
+    
+    private string? ValidateJudgePin(string pin)
+    {
+        if (string.IsNullOrWhiteSpace(pin))
+            return "Judge PIN is required";
+        
+        if (pin.Length < 4)
+            return "Judge PIN must be at least 4 characters";
+        
+        if (pin.Length > 20)
+            return "Judge PIN must be at most 20 characters";
+        
+        return null;
+    }
+    
+    private string? ValidateConfirmPin(string pin)
+    {
+        if (string.IsNullOrWhiteSpace(pin))
+            return "Please confirm the new judge PIN";
+        
+        if (pin != model.NewJudgePin)
+            return "PINs do not match";
+        
+        return null;
+    }
+    
+    private async Task Submit()
+    {
+        if (!isFormValid) return;
+        
+        isSaving = true;
+        StateHasChanged();
+        
+        try
+        {
+            var requestBody = new { NewJudgePin = model.NewJudgePin };
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            var request = new HttpRequestMessage(HttpMethod.Post, $"/events/{EventId}/regenerate-judge-pin")
+            {
+                Content = content
+            };
+            request.Headers.Add("X-Admin-PIN", model.AdminPin);
+            
+            var response = await HttpClient.SendAsync(request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Judge PIN regenerated successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Snackbar.Add("Invalid admin PIN", Severity.Error);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Error: {error}", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add($"Error regenerating judge PIN: {response.StatusCode}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error regenerating judge PIN: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
