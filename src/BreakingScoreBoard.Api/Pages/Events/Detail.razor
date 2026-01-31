@@ -6,6 +6,7 @@
 @inject EventsApiClient EventsApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>@(eventData?.Title ?? "Event Details")</PageTitle>
 
@@ -46,9 +47,17 @@
     {
         <!-- Event Information -->
         <MudPaper Class="form-panel pa-6 mb-4">
-            <MudText Typo="Typo.h4" Style="color: white; margin-bottom: 1.5rem; font-weight: 300;">
-                @eventData.Title
-            </MudText>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <MudText Typo="Typo.h4" Style="color: white; font-weight: 300;">
+                    @eventData.Title
+                </MudText>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.Edit"
+                           OnClick="@OpenEditDialog">
+                    Edit Event
+                </MudButton>
+            </div>
             
             <MudGrid Spacing="3">
                 <MudItem xs="12" md="6">
@@ -74,10 +83,13 @@
                 <MudItem xs="12" md="6">
                     <div style="display: flex; align-items: center; margin-bottom: 1rem;">
                         <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
-                        <div>
+                        <div style="flex-grow: 1;">
                             <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Number of Judges</MudText>
                             <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.JudgeCount Judges</MudText>
                         </div>
+                        <MudTooltip Text="Judge count cannot be changed after event creation">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="color: rgba(255, 255, 255, 0.3);" />
+                        </MudTooltip>
                     </div>
                 </MudItem>
                 
@@ -109,6 +121,51 @@
                         <div>
                             <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Last Updated</MudText>
                             <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.UpdatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- PIN Management -->
+        <MudPaper Class="form-panel pa-6 mb-4">
+            <MudText Typo="Typo.h5" Style="color: white; font-weight: 300; margin-bottom: 1.5rem;">
+                Security & Access
+            </MudText>
+            
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="6">
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1rem; border-left: 3px solid #d32f2f;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">Judge PIN</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    Used by judges to access scoring interface
+                                </MudText>
+                            </div>
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Warning" 
+                                       Size="Size.Small"
+                                       OnClick="@OpenRegenerateJudgePinDialog"
+                                       StartIcon="@Icons.Material.Filled.Sync">
+                                Regenerate
+                            </MudButton>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1rem; border-left: 3px solid #d32f2f;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="flex-grow: 1;">
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">Admin PIN</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    Used for event management and configuration
+                                </MudText>
+                            </div>
+                            <MudTooltip Text="Admin PIN cannot be changed for security reasons">
+                                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="color: rgba(255, 255, 255, 0.3);" />
+                            </MudTooltip>
                         </div>
                     </div>
                 </MudItem>
@@ -208,6 +265,21 @@
     private EventResponse? eventData;
     private bool isLoading = true;
     
+    // Edit form models
+    private class EditEventModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public DateOnly EventDate { get; set; }
+        public string? Location { get; set; }
+        public string AdminPin { get; set; } = string.Empty;
+    }
+    
+    private class RegenerateJudgePinModel
+    {
+        public string AdminPin { get; set; } = string.Empty;
+        public string NewJudgePin { get; set; } = string.Empty;
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadEventData();
@@ -234,6 +306,56 @@
         finally
         {
             isLoading = false;
+        }
+    }
+    
+    private async Task OpenEditDialog()
+    {
+        if (eventData == null) return;
+        
+        var parameters = new DialogParameters
+        {
+            ["EventData"] = eventData
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<EditEventDialog>("Edit Event Details", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await LoadEventData();
+        }
+    }
+    
+    private async Task OpenRegenerateJudgePinDialog()
+    {
+        if (eventData == null) return;
+        
+        var parameters = new DialogParameters
+        {
+            ["EventId"] = EventId
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<RegenerateJudgePinDialog>("Regenerate Judge PIN", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Judge PIN regenerated successfully", Severity.Success);
         }
     }
     
