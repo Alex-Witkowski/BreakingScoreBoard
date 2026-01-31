@@ -70,7 +70,7 @@
                             }
                             <MudText Typo="Typo.body2">
                                 <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Color="Color.Tertiary" />
-                                @evt.JudgeCount judges
+                                @evt.JudgeCount @(evt.JudgeCount == 1 ? "judge" : "judges")
                             </MudText>
                             @if (isPast)
                             {
