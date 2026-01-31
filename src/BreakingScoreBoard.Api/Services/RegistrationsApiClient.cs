@@ -53,4 +53,19 @@ public class RegistrationsApiClient : ApiClientBase
             $"/events/{eventId}/registrations",
             ct);
     }
+
+    /// <summary>
+    /// Delete a registration
+    /// </summary>
+    public async Task DeleteRegistrationAsync(
+        Guid eventId,
+        Guid registrationId,
+        string adminPin,
+        CancellationToken ct = default)
+    {
+        await DeleteAsync(
+            $"/events/{eventId}/registrations/{registrationId}",
+            adminPin,
+            ct);
+    }
 }

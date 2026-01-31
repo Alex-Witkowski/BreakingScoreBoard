@@ -259,4 +259,36 @@ public class RegistrationsController : ControllerBase
             .ToListAsync();
 
         return Ok(registrations);
-    }}
+    }
+
+    /// <summary>
+    /// Delete a registration.
+    /// </summary>
+    /// <param name="eventId">Event ID</param>
+    /// <param name="registrationId">Registration ID</param>
+    /// <returns>No content on success</returns>
+    /// <response code="204">Registration deleted successfully</response>
+    /// <response code="404">Registration not found</response>
+    [HttpDelete("events/{eventId:guid}/registrations/{registrationId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteRegistration(
+        Guid eventId,
+        Guid registrationId)
+    {
+        // Find registration and verify it belongs to the event
+        var registration = await _context.Registrations
+            .Include(r => r.Category)
+            .FirstOrDefaultAsync(r => r.Id == registrationId && r.Category.EventId == eventId);
+
+        if (registration is null)
+        {
+            return NotFound(new { message = "Registration not found" });
+        }
+
+        _context.Registrations.Remove(registration);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+}

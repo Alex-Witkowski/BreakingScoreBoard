@@ -11,6 +11,7 @@
 @inject BreakersApiClient BreakersApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>Register Dancers</PageTitle>
 
@@ -287,6 +288,10 @@
                                              Size="Size.Small" 
                                              Color="Color.Primary"
                                              OnClick="@(() => EditDancer(context))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                             Size="Size.Small" 
+                                             Color="Color.Error"
+                                             OnClick="@(() => DeleteDancer(context))" />
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
@@ -563,6 +568,43 @@
     {
         ClearForm();
         Snackbar.Add("Edit cancelled", Severity.Normal);
+    }
+
+    private async Task DeleteDancer(RegistrationResponse dancer)
+    {
+        if (string.IsNullOrEmpty(adminPin))
+        {
+            Snackbar.Add("Admin PIN required to delete dancers", Severity.Warning);
+            return;
+        }
+
+        bool? confirmed = await DialogService.ShowMessageBox(
+            "Delete Dancer",
+            $"Are you sure you want to remove {dancer.BattleName} ({dancer.BreakerName}) from {dancer.CategoryName}?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await RegistrationsApi.DeleteRegistrationAsync(
+                EventId,
+                dancer.Id,
+                adminPin);
+
+            Snackbar.Add($"Removed {dancer.BattleName} from event", Severity.Success);
+
+            // Refresh the registered dancers list
+            await LoadRegisteredDancers();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
+        }
     }
 
     private void ClearForm()
