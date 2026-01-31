@@ -5,10 +5,11 @@
         
         <MudTextField @bind-Value="adminPin"
                       Label="Admin PIN"
-                      Variant="Variant.Outlined"
+                      Variant="Variant.Filled"
                       InputType="InputType.Password"
                       Required="true"
-                      Class="mt-4" />
+                      Class="mt-4"
+                      HelperText="Enter admin PIN to confirm deletion" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
