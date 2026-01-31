@@ -1,6 +1,45 @@
 @rendermode InteractiveServer
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@customTheme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+
+@code {
+    private MudTheme customTheme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#d32f2f",
+            Secondary = "#b71c1c",
+            Background = "#1e1e23",
+            BackgroundGray = "#1a1a1f",
+            Surface = "#252529",
+            DrawerBackground = "#1e1e23",
+            DrawerText = "rgba(255,255,255, 0.87)",
+            DrawerIcon = "rgba(255,255,255, 0.7)",
+            AppbarBackground = "#1e1e23",
+            AppbarText = "rgba(255,255,255, 0.87)",
+            TextPrimary = "rgba(255,255,255, 0.87)",
+            TextSecondary = "rgba(255,255,255, 0.7)",
+            ActionDefault = "rgba(255,255,255, 0.7)",
+            ActionDisabled = "rgba(255,255,255, 0.3)",
+            ActionDisabledBackground = "rgba(255,255,255, 0.12)",
+            Divider = "rgba(255,255,255, 0.12)",
+            DividerLight = "rgba(255,255,255, 0.06)",
+            TableLines = "rgba(255,255,255, 0.12)",
+            LinesDefault = "rgba(255,255,255, 0.12)",
+            LinesInputs = "rgba(255,255,255, 0.3)",
+            TextDisabled = "rgba(255,255,255, 0.2)",
+            Info = "#2196F3",
+            Success = "#4CAF50",
+            Warning = "#FF9800",
+            Error = "#F44336",
+            Dark = "#424242"
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            DefaultBorderRadius = "4px"
+        }
+    };
+}

@@ -63,7 +63,8 @@
                                   Variant="Variant.Outlined"
                                   FullWidth="true"
                                   Class="mb-3"
-                                  Disabled="@pinValidating" />
+                                  Disabled="@pinValidating"
+                                  Style="font-size: 1.1rem;" />
                     
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
@@ -114,7 +115,8 @@
                                       FullWidth="true"
                                       Placeholder="e.g., John Doe"
                                       Required="true"
-                                      Disabled="@isSubmitting" />
+                                      Disabled="@isSubmitting"
+                                      Style="font-size: 1.1rem;" />
                     </MudItem>
 
                     <MudItem xs="12" md="6">
@@ -125,7 +127,8 @@
                                       Placeholder="e.g., B-Boy Thunder"
                                       Required="true"
                                       Disabled="@isSubmitting"
-                                      HelperText="Stage name for competition" />
+                                      HelperText="Stage name for competition"
+                                      Style="font-size: 1.1rem;" />
                     </MudItem>
 
                     <MudItem xs="12" md="6">
@@ -133,8 +136,11 @@
                                        Label="Date of Birth"
                                        Variant="Variant.Outlined"
                                        Required="true"
+                                       Editable="true"
+                                       DateFormat="dd.MM.yyyy"
                                        Disabled="@isSubmitting"
-                                       MaxDate="@DateTime.UtcNow" />
+                                       MaxDate="@DateTime.UtcNow"
+                                       Style="font-size: 1.1rem;" />
                     </MudItem>
 
                     <MudItem xs="12" md="6">
