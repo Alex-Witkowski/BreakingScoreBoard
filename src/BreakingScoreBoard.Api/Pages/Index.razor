@@ -40,8 +40,7 @@
         <MudGrid Class="mt-6">
             @foreach (var evt in events)
             {
-                var isUpcoming = evt.EventDate >= DateOnly.FromDateTime(DateTime.Today);
-                var isPast = evt.EventDate < DateOnly.FromDateTime(DateTime.Today);
+                var isPast = evt.EventDate < today;
                 
                 <MudItem xs="12" md="6" lg="4">
                     <MudCard Elevation="3" Class="@(isPast ? "past-event" : "")">
@@ -120,9 +119,11 @@
     private List<EventResponse>? events;
     private bool isLoading = true;
     private string? loadError;
+    private DateOnly today;
 
     protected override async Task OnInitializedAsync()
     {
+        today = DateOnly.FromDateTime(DateTime.Today);
         await LoadEvents();
     }
 
@@ -135,8 +136,6 @@
         {
             // Get all events and order by date (upcoming first, then past events)
             var allEvents = await EventsApi.GetEventsAsync();
-            
-            var today = DateOnly.FromDateTime(DateTime.Today);
             
             // Separate upcoming and past events
             var upcomingEvents = allEvents.Where(e => e.EventDate >= today)
