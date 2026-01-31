@@ -742,11 +742,53 @@ If you encounter issues:
 For production environments, consider:
 
 1. **Use HTTPS:** Configure a reverse proxy (nginx, Apache, or cloud load balancer)
-2. **Secure Secrets:** Use environment variables or secrets management
+2. **Secure Secrets:** Use Docker secrets, environment variables, or secrets management services
 3. **Managed Database:** Use cloud PostgreSQL (Azure Database, AWS RDS, etc.)
 4. **Monitoring:** Set up logging aggregation and application monitoring
 5. **Backups:** Automate database backups
 6. **Resource Limits:** Configure appropriate memory and CPU limits
+
+### Docker Secrets (Production)
+
+For production deployments, use Docker secrets instead of environment variables for sensitive data:
+
+**Create secrets:**
+```bash
+# Create password files
+echo "your_secure_password" | docker secret create postgres_password -
+echo "your_admin_pin" | docker secret create admin_pin -
+```
+
+**Update docker-compose.yml for production:**
+```yaml
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+
+  app:
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=breakingscoreboard;Username=postgres;Password_File=/run/secrets/postgres_password"
+      AdminPin_File: /run/secrets/admin_pin
+    secrets:
+      - postgres_password
+      - admin_pin
+
+secrets:
+  postgres_password:
+    external: true
+  admin_pin:
+    external: true
+```
+
+**Deploy:**
+```bash
+docker stack deploy -c docker-compose.yml breakingscoreboard
+```
+
+**Note:** Docker secrets are only available in Docker Swarm mode. For Docker Compose without Swarm, use environment variables with restricted file permissions.
 
 ### Example nginx Configuration
 
