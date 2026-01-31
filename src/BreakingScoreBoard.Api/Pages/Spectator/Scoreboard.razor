@@ -8,9 +8,17 @@
 <PageTitle>Live Scoreboard</PageTitle>
 
 <div class="container-fluid py-4">
-    <h1 class="mb-4 text-info">
-        <i class="bi bi-tv-fill"></i> Live Scoreboard
-    </h1>
+    <div class="scoreboard-header">
+        <h1 class="mb-4 text-info">
+            <i class="bi bi-tv-fill"></i> Live Scoreboard
+        </h1>
+        <div class="nav-links">
+            <a href="/judge/scoring" class="nav-link">Judge Scoring</a>
+            <a href="/spectator/scoreboard" class="nav-link active">Live Scoreboard</a>
+            <a href="/spectator/rankings" class="nav-link">Rankings Table</a>
+            <a href="/spectator/bracket" class="nav-link">Battle Bracket</a>
+        </div>
+    </div>
 
     <!-- Event Selector -->
     <div class="row">
@@ -193,6 +201,37 @@
         </div>
     </div>
 </div>
+
+<style>
+    .scoreboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 1rem;
+    }
+
+    .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        padding: 0.75rem 1.5rem;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .nav-link:hover {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-link.active {
+        color: white;
+        border-bottom-color: #d32f2f;
+    }
+</style>
 
 @code {
     [SupplyParameterFromQuery(Name = "eventId")]

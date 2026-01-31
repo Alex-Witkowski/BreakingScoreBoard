@@ -15,7 +15,9 @@
     <div class="nav-tabs">
         <button class="nav-tab active">Create Breakdance Battle</button>
         <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/judge/scoring")'>Judge Scoring</button>
-        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/spectator/scoreboard")'>Spectator Scoreboard</button>
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/spectator/scoreboard")'>Live Scoreboard</button>
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/spectator/rankings")'>Rankings Table</button>
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/spectator/bracket")'>Battle Bracket</button>
     </div>
 
     <!-- Create Event Form -->
@@ -104,11 +106,25 @@
                             @evt.Title - @evt.Location - @evt.EventDate.ToString("dd.MM.yyyy")
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <MudTooltip Text="Spectator Scoreboard">
+                            <MudTooltip Text="Live Scoreboard">
                                 <MudIconButton Icon="@Icons.Material.Filled.Tv" 
                                                Size="Size.Small" 
                                                Color="Color.Info"
                                                Href="@($"/spectator/scoreboard?eventId={evt.Id}")"
+                                               @onclick:stopPropagation="true" />
+                            </MudTooltip>
+                            <MudTooltip Text="Rankings Table">
+                                <MudIconButton Icon="@Icons.Material.Filled.TableChart" 
+                                               Size="Size.Small" 
+                                               Color="Color.Primary"
+                                               Href="@($"/spectator/rankings?eventId={evt.Id}")"
+                                               @onclick:stopPropagation="true" />
+                            </MudTooltip>
+                            <MudTooltip Text="Battle Bracket">
+                                <MudIconButton Icon="@Icons.Material.Filled.AccountTree" 
+                                               Size="Size.Small" 
+                                               Color="Color.Warning"
+                                               Href="@($"/spectator/bracket?eventId={evt.Id}")"
                                                @onclick:stopPropagation="true" />
                             </MudTooltip>
                             <MudTooltip Text="Judge Scoring">
