@@ -28,6 +28,11 @@ public sealed record RegistrationResponse
     public required string BattleName { get; init; }
 
     /// <summary>
+    /// Category ID the breaker is registered in.
+    /// </summary>
+    public required Guid CategoryId { get; init; }
+
+    /// <summary>
     /// Category name the breaker is registered in.
     /// </summary>
     public required string CategoryName { get; init; }

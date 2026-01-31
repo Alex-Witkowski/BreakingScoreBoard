@@ -165,7 +165,23 @@
                 </MudGrid>
 
                 <!-- Eligible Categories -->
-                @if (birthDateValue.HasValue && eligibleCategories.Any())
+                @if (isEditing)
+                {
+                    <!-- In edit mode, show current category (read-only) -->
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255, 152, 0, 0.1); border-left: 3px solid #FF9800; border-radius: 4px;">
+                        <MudText Typo="Typo.subtitle2" Style="color: #FFB74D; margin-bottom: 0.5rem;">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1" />
+                            Current Category
+                        </MudText>
+                        <MudText Typo="Typo.body2" Style="color: white;">
+                            @(eligibleCategories.FirstOrDefault(c => c.Id == selectedCategoryId)?.Name ?? "Unknown")
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.6); margin-top: 0.25rem;">
+                            Category cannot be changed when editing
+                        </MudText>
+                    </div>
+                }
+                else if (birthDateValue.HasValue && eligibleCategories.Any())
                 {
                     <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(56, 142, 60, 0.1); border-left: 3px solid #388E3C; border-radius: 4px;">
                         <MudText Typo="Typo.subtitle2" Style="color: #81C784; margin-bottom: 0.75rem;">
@@ -525,6 +541,7 @@
             var breakerDetails = await BreakersApi.GetBreakerAsync(dancer.BreakerId);
             
             editingBreakerId = dancer.BreakerId;
+            selectedCategoryId = dancer.CategoryId;
             formModel.Name = breakerDetails.Name;
             formModel.BattleName = breakerDetails.BattleName;
             birthDateValue = breakerDetails.BirthDate.ToDateTime(TimeOnly.MinValue);
@@ -564,7 +581,8 @@
             return;
         }
 
-        var request = new UpdateBreakerRequest
+        // Update breaker information only (category cannot be changed)
+        var updateRequest = new UpdateBreakerRequest
         {
             Name = formModel.Name,
             BattleName = formModel.BattleName,
@@ -573,7 +591,7 @@
 
         await BreakersApi.UpdateBreakerAsync(
             editingBreakerId.Value,
-            request,
+            updateRequest,
             adminPin);
 
         Snackbar.Add($"Updated {formModel.BattleName} successfully!", Severity.Success);
