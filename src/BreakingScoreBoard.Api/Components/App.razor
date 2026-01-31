@@ -2,15 +2,32 @@
 @using Microsoft.AspNetCore.Components.Routing
 @using BreakingScoreBoard.Api
 
-<Router AppAssembly="typeof(Program).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout)" />
-    </Found>
-    <NotFound>
-        <PageTitle>Not found</PageTitle>
-        <div class="container">
-            <h1 class="mt-3">Page not found</h1>
-            <p>Sorry, there's nothing at this address.</p>
-        </div>
-    </NotFound>
-</Router>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="/css/site.css" rel="stylesheet" />
+    <HeadOutlet />
+</head>
+<body>
+    <Router AppAssembly="typeof(Program).Assembly">
+        <Found Context="routeData">
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout)" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <div class="container mt-8">
+                <h1 class="text-danger">Page not found</h1>
+                <p class="mt-4">Sorry, there's nothing at this address.</p>
+            </div>
+        </NotFound>
+    </Router>
+
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+</body>
+</html>
