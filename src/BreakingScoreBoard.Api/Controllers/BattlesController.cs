@@ -86,6 +86,35 @@ public class BattlesController : ControllerBase
     }
 
     /// <summary>
+    /// Gets the next scheduled battle for a category (oldest scheduled).
+    /// </summary>
+    /// <param name="categoryId">The category ID.</param>
+    /// <returns>The next battle to run, or 404 if none available.</returns>
+    [HttpGet("next")]
+    [ProducesResponseType(typeof(BattleDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BattleDetailResponse>> GetNextBattle([FromQuery] Guid categoryId)
+    {
+        var nextBattle = await _dbContext.Battles
+            .Include(b => b.Breaker1)
+            .Include(b => b.Breaker2)
+            .Include(b => b.Winner)
+            .Include(b => b.Scores)
+            .Where(b => b.CategoryId == categoryId && b.Status == BattleStatus.Scheduled)
+            .OrderBy(b => b.ScheduledAt)
+            .ThenBy(b => b.Id)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+
+        if (nextBattle is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("No scheduled battles found for this category"));
+        }
+
+        return Ok(MapToDetailResponse(nextBattle));
+    }
+
+    /// <summary>
     /// Starts a battle (changes status to InProgress).
     /// </summary>
     /// <param name="battleId">The battle ID.</param>
@@ -172,6 +201,53 @@ public class BattlesController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("Triggered reveal countdown for battle {BattleId}", battleId);
+
+        return Ok(MapToDetailResponse(battle));
+    }
+
+    /// <summary>
+    /// Completes a battle after reveal countdown (calculates winner from scores).
+    /// </summary>
+    /// <param name="battleId">The battle ID.</param>
+    /// <returns>The completed battle.</returns>
+    [HttpPost("{battleId:guid}/complete")]
+    [RequireAdminPin]
+    [ProducesResponseType(typeof(BattleDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BattleDetailResponse>> CompleteBattle(Guid battleId)
+    {
+        var battle = await _dbContext.Battles
+            .Include(b => b.Breaker1)
+            .Include(b => b.Breaker2)
+            .Include(b => b.Scores)
+            .FirstOrDefaultAsync(b => b.Id == battleId);
+
+        if (battle is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Battle not found"));
+        }
+
+        if (battle.Status != BattleStatus.RevealCountdown)
+        {
+            return BadRequest(ErrorResponse.FromMessage($"Battle can only be completed from RevealCountdown status"));
+        }
+
+        // Determine winner from scores
+        var winnerId = _scoringService.DetermineWinner(battle, battle.Scores);
+
+        if (!winnerId.HasValue)
+        {
+            return BadRequest(ErrorResponse.FromMessage("Cannot determine winner - incomplete scores or tie"));
+        }
+
+        battle.WinnerId = winnerId.Value;
+        battle.Status = BattleStatus.Completed;
+        battle.CompletedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Completed battle {BattleId}, winner: {WinnerId}", battleId, winnerId.Value);
 
         return Ok(MapToDetailResponse(battle));
     }

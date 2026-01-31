@@ -46,6 +46,14 @@ public class BattlesApiClient : ApiClientBase
     }
 
     /// <summary>
+    /// Get next scheduled battle for a category
+    /// </summary>
+    public async Task<BattleDetailResponse> GetNextBattleAsync(Guid categoryId, CancellationToken ct = default)
+    {
+        return await GetAsync<BattleDetailResponse>($"/battles/next?categoryId={categoryId}", ct);
+    }
+
+    /// <summary>
     /// Start a battle
     /// </summary>
     public async Task<BattleDetailResponse> StartBattleAsync(
@@ -55,6 +63,21 @@ public class BattlesApiClient : ApiClientBase
     {
         return await PostAsync<object, BattleDetailResponse>(
             $"/battles/{battleId}/start",
+            new { },
+            adminPin,
+            ct);
+    }
+
+    /// <summary>
+    /// Complete a battle after reveal countdown
+    /// </summary>
+    public async Task<BattleDetailResponse> CompleteBattleAsync(
+        Guid battleId,
+        string adminPin,
+        CancellationToken ct = default)
+    {
+        return await PostAsync<object, BattleDetailResponse>(
+            $"/battles/{battleId}/complete",
             new { },
             adminPin,
             ct);

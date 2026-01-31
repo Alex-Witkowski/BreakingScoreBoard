@@ -1,0 +1,72 @@
+@rendermode InteractiveServer
+
+<MudDialog Style="background: rgba(30, 30, 35, 0.98); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);">
+    <DialogContent>
+        <MudText Style="color: white; font-size: 1.2rem; margin-bottom: 8px; font-weight: 300;">
+            @Title
+        </MudText>
+        
+        @if (!string.IsNullOrEmpty(Message))
+        {
+            <MudText Style="color: rgba(255, 255, 255, 0.6); font-size: 0.95rem; margin-bottom: 24px;">
+                @Message
+            </MudText>
+        }
+        
+        <MudTextField @bind-Value="pin"
+                      Label="PIN"
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Password"
+                      Required="true"
+                      Style="font-size: 1.1rem;"
+                      @onkeydown="@HandleKeyDown" />
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Style="color: rgba(255, 255, 255, 0.7); text-transform: none; font-size: 1rem;">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="Submit" 
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@string.IsNullOrWhiteSpace(pin)"
+                   Style="font-size: 1rem; text-transform: none; font-weight: 500;">
+            Confirm
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    [Parameter]
+    public string Title { get; set; } = "Enter PIN";
+    
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+    
+    private string pin = string.Empty;
+    
+    private void Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(pin))
+        {
+            MudDialog.Close(DialogResult.Ok(pin));
+        }
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(pin))
+        {
+            Submit();
+        }
+    }
+}

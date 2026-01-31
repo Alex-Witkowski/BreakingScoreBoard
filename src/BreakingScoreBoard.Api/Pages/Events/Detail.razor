@@ -2,9 +2,11 @@
 @rendermode InteractiveServer
 @using BreakingScoreBoard.Api.Services
 @using BreakingScoreBoard.Api.Contracts.Events
+@using BreakingScoreBoard.Api.Contracts.Battles
 @using BreakingScoreBoard.Domain.Enums
 @inject EventsApiClient EventsApi
 @inject CategoriesApiClient CategoriesApi
+@inject BattlesApiClient BattlesApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -232,6 +234,29 @@
                                         @category.CurrentPhase.ToString()
                                     </MudChip>
                                 </div>
+                                
+                                <div style="display: flex; gap: 0.5rem;">
+                                    @if (category.CurrentPhase == CategoryPhase.Registration)
+                                    {
+                                        <MudButton Variant="Variant.Filled" 
+                                                   Color="Color.Success" 
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => StartCategoryBracket(category))"
+                                                   StartIcon="@Icons.Material.Filled.PlayArrow">
+                                            Start
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Variant="Variant.Outlined" 
+                                                   Color="Color.Warning" 
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => ResetCategory(category))"
+                                                   StartIcon="@Icons.Material.Filled.RestartAlt">
+                                            Reset
+                                        </MudButton>
+                                    }
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -246,6 +271,100 @@
                 </div>
             }
         </MudPaper>
+        
+        <!-- Active Category Battle Management -->
+        @if (eventData.Categories.Any(c => c.CurrentPhase == CategoryPhase.PreSelection || c.CurrentPhase == CategoryPhase.Bracket))
+        {
+            <MudPaper Class="form-panel pa-6 mb-4">
+                <MudText Typo="Typo.h5" Style="color: white; font-weight: 300; margin-bottom: 1.5rem;">
+                    Battle Management
+                </MudText>
+                
+                <!-- Active Category Selector -->
+                <MudSelect T="Guid?" 
+                           Value="@activeCategoryId"
+                           ValueChanged="@OnActiveCategoryChanged"
+                           Label="Active Category" 
+                           Variant="Variant.Outlined"
+                           Class="mb-4"
+                           AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem T="Guid?" Value="null">Select a category...</MudSelectItem>
+                    @foreach (var category in eventData.Categories.Where(c => c.CurrentPhase == CategoryPhase.PreSelection || c.CurrentPhase == CategoryPhase.Bracket))
+                    {
+                        <MudSelectItem T="Guid?" Value="@category.Id">
+                            @category.Name (@category.CurrentPhase)
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+                
+                <!-- Next Battle Panel -->
+                @if (activeCategoryId.HasValue && nextBattle != null)
+                {
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1.5rem; border-left: 3px solid #4caf50;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                            <div>
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">Next Battle</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    @nextBattle.BracketLevel - Battle #@nextBattle.BracketPosition
+                                </MudText>
+                            </div>
+                            <MudChip T="string" Size="Size.Small" Color="@GetBattleStatusColor(nextBattle.Status)">
+                                @nextBattle.Status
+                            </MudChip>
+                        </div>
+                        
+                        <MudGrid Spacing="2" Class="mb-4">
+                            <MudItem xs="12" md="5">
+                                <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 4px;">
+                                    <MudText Typo="Typo.h6" Style="color: white;">@nextBattle.Breaker1Name</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Breaker 1</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="2" Style="display: flex; align-items: center; justify-content: center;">
+                                <MudText Typo="Typo.h5" Style="color: #d32f2f; font-weight: bold;">VS</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="5">
+                                <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 4px;">
+                                    <MudText Typo="Typo.h6" Style="color: white;">@nextBattle.Breaker2Name</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Breaker 2</MudText>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                        
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            @if (nextBattle.Status == BattleStatus.Scheduled)
+                            {
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Success" 
+                                           OnClick="@StartNextBattle"
+                                           StartIcon="@Icons.Material.Filled.PlayArrow">
+                                    Start Battle
+                                </MudButton>
+                            }
+                            
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Info" 
+                                       Href="@($"/judge/scoring?eventId={eventData.Id}&battleId={nextBattle.Id}")"
+                                       StartIcon="@Icons.Material.Filled.Score">
+                                Go to Scoring
+                            </MudButton>
+                        </div>
+                    </div>
+                }
+                else if (activeCategoryId.HasValue && nextBattle == null && !isLoadingNextBattle)
+                {
+                    <MudAlert Severity="Severity.Info">
+                        No scheduled battles found for this category. All battles may be complete!
+                    </MudAlert>
+                }
+                else if (activeCategoryId.HasValue && isLoadingNextBattle)
+                {
+                    <div style="text-align: center; padding: 2rem;">
+                        <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
+                    </div>
+                }
+            </MudPaper>
+        }
         
         <!-- Action Buttons -->
         <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
@@ -287,6 +406,10 @@
     private EventResponse? eventData;
     private bool isLoading = true;
     
+    private Guid? activeCategoryId;
+    private BattleDetailResponse? nextBattle;
+    private bool isLoadingNextBattle;
+    
     // Edit form models
     private class EditEventModel
     {
@@ -305,6 +428,53 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadEventData();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && activeCategoryId.HasValue)
+        {
+            await LoadNextBattle();
+        }
+    }
+    
+    private async Task OnActiveCategoryChanged(Guid? categoryId)
+    {
+        activeCategoryId = categoryId;
+        nextBattle = null;
+        
+        if (categoryId.HasValue)
+        {
+            await LoadNextBattle();
+        }
+    }
+    
+    private async Task LoadNextBattle()
+    {
+        if (!activeCategoryId.HasValue) return;
+        
+        isLoadingNextBattle = true;
+        StateHasChanged();
+        
+        try
+        {
+            nextBattle = await BattlesApi.GetNextBattleAsync(activeCategoryId.Value);
+        }
+        catch (HttpRequestException)
+        {
+            // No battles found is expected - not an error
+            nextBattle = null;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading next battle: {ex.Message}", Severity.Error);
+            nextBattle = null;
+        }
+        finally
+        {
+            isLoadingNextBattle = false;
+            StateHasChanged();
+        }
     }
     
     private async Task LoadEventData()
@@ -431,6 +601,141 @@
             CategoryPhase.PreSelection => Color.Warning,
             CategoryPhase.Bracket => Color.Success,
             CategoryPhase.Completed => Color.Default,
+            _ => Color.Default
+        };
+    }
+    
+    private async Task StartCategoryBracket(CategoryResponse category)
+    {
+        if (eventData == null) return;
+        
+        var confirmed = await DialogService.ShowMessageBox(
+            "Start Category Bracket",
+            $"Start the bracket for {category.Name}? This will lock registrations and create initial battles.",
+            yesText: "Start", cancelText: "Cancel");
+        
+        if (confirmed != true) return;
+        
+        try
+        {
+            // Prompt for admin PIN
+            var parameters = new DialogParameters
+            {
+                ["Title"] = "Enter Admin PIN",
+                ["Message"] = "Admin PIN required to start bracket"
+            };
+            
+            var pinDialog = await DialogService.ShowAsync<PinInputDialog>("Admin PIN", parameters);
+            var pinResult = await pinDialog.Result;
+            
+            if (pinResult.Canceled || pinResult.Data is not string adminPin)
+            {
+                return;
+            }
+            
+            // Check if pre-selection is needed
+            if (category.RegistrationCount > category.BracketSize)
+            {
+                await CategoriesApi.StartPreSelectionAsync(eventData.Id, category.Id, adminPin);
+                Snackbar.Add($"Pre-selection started for {category.Name}", Severity.Success);
+            }
+            else if (category.RegistrationCount < 2)
+            {
+                Snackbar.Add($"Cannot start - need at least 2 registrations, have {category.RegistrationCount}", Severity.Error);
+                return;
+            }
+            else
+            {
+                await CategoriesApi.StartBracketAsync(eventData.Id, category.Id, adminPin);
+                Snackbar.Add($"Bracket started for {category.Name}", Severity.Success);
+            }
+            
+            await LoadEventData(); // Refresh data
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private async Task ResetCategory(CategoryResponse category)
+    {
+        if (eventData == null) return;
+        
+        var confirmed = await DialogService.ShowMessageBox(
+            "Reset Category",
+            $"Reset {category.Name}? This will DELETE all battles and scores, returning to registration phase. This cannot be undone!",
+            yesText: "Reset", cancelText: "Cancel");
+        
+        if (confirmed != true) return;
+        
+        try
+        {
+            // Prompt for admin PIN
+            var parameters = new DialogParameters
+            {
+                ["Title"] = "Enter Admin PIN",
+                ["Message"] = "Admin PIN required to reset category"
+            };
+            
+            var pinDialog = await DialogService.ShowAsync<PinInputDialog>("Admin PIN", parameters);
+            var pinResult = await pinDialog.Result;
+            
+            if (pinResult.Canceled || pinResult.Data is not string adminPin)
+            {
+                return;
+            }
+            
+            await CategoriesApi.ResetCategoryAsync(eventData.Id, category.Id, adminPin);
+            Snackbar.Add($"{category.Name} reset successfully", Severity.Success);
+            await LoadEventData(); // Refresh data
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private async Task StartNextBattle()
+    {
+        if (nextBattle == null || eventData == null) return;
+        
+        try
+        {
+            // Prompt for admin PIN
+            var parameters = new DialogParameters
+            {
+                ["Title"] = "Enter Admin PIN",
+                ["Message"] = "Admin PIN required to start battle"
+            };
+            
+            var pinDialog = await DialogService.ShowAsync<PinInputDialog>("Admin PIN", parameters);
+            var pinResult = await pinDialog.Result;
+            
+            if (pinResult.Canceled || pinResult.Data is not string adminPin)
+            {
+                return;
+            }
+            
+            await BattlesApi.StartBattleAsync(nextBattle.Id, adminPin);
+            Snackbar.Add("Battle started successfully", Severity.Success);
+            await LoadNextBattle(); // Refresh to show updated status
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private Color GetBattleStatusColor(BattleStatus status)
+    {
+        return status switch
+        {
+            BattleStatus.Scheduled => Color.Default,
+            BattleStatus.InProgress => Color.Primary,
+            BattleStatus.RevealCountdown => Color.Warning,
+            BattleStatus.Completed => Color.Success,
+            BattleStatus.Walkover => Color.Info,
             _ => Color.Default
         };
     }

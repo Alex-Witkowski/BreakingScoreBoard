@@ -9,6 +9,70 @@ namespace BreakingScoreBoard.Domain.Services;
 public class BracketService
 {
     /// <summary>
+    /// Creates the initial bracket from active registrations with random pairing.
+    /// Randomly shuffles registrations to prevent registration-time bias for byes and matchups.
+    /// </summary>
+    /// <param name="category">The category entity.</param>
+    /// <param name="activeRegistrations">Active registrations for the category.</param>
+    /// <returns>List of created battles.</returns>
+    public List<Battle> CreateInitialBracket(AgeCategory category, List<Registration> activeRegistrations)
+    {
+        if (activeRegistrations.Count < 2)
+        {
+            return new List<Battle>();
+        }
+
+        // Calculate bracket level based on bracket size
+        var bracketLevel = category.BracketSize switch
+        {
+            8 => BracketLevel.Top8,
+            16 => BracketLevel.Top16,
+            32 => BracketLevel.Top32,
+            64 => BracketLevel.Top64,
+            _ => BracketLevel.Top16 // Default fallback
+        };
+
+        // CRITICAL: Randomly shuffle registrations to prevent registration-time bias
+        var random = new Random();
+        var shuffledRegistrations = activeRegistrations
+            .OrderBy(_ => random.Next())
+            .ToList();
+
+        var battles = new List<Battle>();
+        var numBattles = activeRegistrations.Count / 2;
+        
+        // Create battles by pairing consecutive shuffled registrations
+        for (int i = 0; i < numBattles; i++)
+        {
+            var breaker1 = shuffledRegistrations[i * 2];
+            var breaker2 = shuffledRegistrations[i * 2 + 1];
+
+            var battle = new Battle
+            {
+                Id = Guid.NewGuid(),
+                CategoryId = category.Id,
+                BracketLevel = bracketLevel,
+                BracketPosition = i + 1,
+                Breaker1Id = breaker1.BreakerId,
+                Breaker2Id = breaker2.BreakerId,
+                Status = BattleStatus.Scheduled,
+                ScheduledAt = DateTime.UtcNow
+            };
+
+            battles.Add(battle);
+        }
+
+        // Handle bye (green card) if odd number of registrations
+        if (activeRegistrations.Count % 2 == 1)
+        {
+            var byeRegistration = shuffledRegistrations.Last();
+            byeRegistration.Status = RegistrationStatus.Advanced;
+        }
+
+        return battles;
+    }
+
+    /// <summary>
     /// Gets the next bracket level in the progression.
     /// FR-008: Supports automatic advancement through bracket levels.
     /// </summary>
