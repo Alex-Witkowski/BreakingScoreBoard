@@ -99,7 +99,7 @@
             {
                 <div class="event-item">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <div style="flex: 1; cursor: pointer;" @onclick='() => Navigation.NavigateTo($"/events/{evt.Id}")'>
+                        <div style="flex: 1; cursor: pointer;" @onclick='() => Navigation.NavigateTo($"/events/detail/{evt.Id}")'>
                             <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="mr-2" />
                             @evt.Title - @evt.Location - @evt.EventDate.ToString("dd.MM.yyyy")
                         </div>

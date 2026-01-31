@@ -1,4 +1,4 @@
-@page "/events/{EventId:guid}"
+@page "/events/detail/{EventId:guid}"
 @rendermode InteractiveServer
 @using BreakingScoreBoard.Api.Services
 @using BreakingScoreBoard.Api.Contracts.Events
@@ -121,7 +121,7 @@
             <MudPaper Class="form-panel pa-6">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
                     <MudText Typo="Typo.h5" Style="color: white; font-weight: 300;">Age Categories</MudText>
-                    <MudChip Color="Color.Primary" Size="Size.Small">@eventData.Categories.Count Categories</MudChip>
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">@eventData.Categories.Count Categories</MudChip>
                 </div>
                 
                 @foreach (var category in eventData.Categories.OrderBy(c => c.SortOrder))
@@ -155,7 +155,7 @@
                                 
                                 <div style="text-align: center;">
                                     <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Phase</MudText>
-                                    <MudChip Size="Size.Small" Color="@GetPhaseColor(category.CurrentPhase)">
+                                    <MudChip T="string" Size="Size.Small" Color="@GetPhaseColor(category.CurrentPhase)">
                                         @category.CurrentPhase.ToString()
                                     </MudChip>
                                 </div>
@@ -242,7 +242,7 @@
         return phase switch
         {
             CategoryPhase.Registration => Color.Info,
-            CategoryPhase.Seeding => Color.Warning,
+            CategoryPhase.PreSelection => Color.Warning,
             CategoryPhase.Bracket => Color.Success,
             CategoryPhase.Completed => Color.Default,
             _ => Color.Default
