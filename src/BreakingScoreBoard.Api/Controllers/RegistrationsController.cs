@@ -155,6 +155,7 @@ public class RegistrationsController : ControllerBase
             BreakerId = breaker.Id,
             BreakerName = breaker.Name,
             BattleName = breaker.DisplayName,
+            CategoryName = category.Name,
             Age = age,
             Status = registration.Status,
             RegisteredAt = registration.RegisteredAt
@@ -205,6 +206,7 @@ public class RegistrationsController : ControllerBase
             BreakerId = registration.BreakerId,
             BreakerName = registration.Breaker.Name,
             BattleName = registration.Breaker.DisplayName,
+            CategoryName = registration.Category.Name,
             Age = age,
             Status = registration.Status,
             RegisteredAt = registration.RegisteredAt
@@ -246,6 +248,7 @@ public class RegistrationsController : ControllerBase
                 BreakerId = r.BreakerId,
                 BreakerName = r.Breaker.Name,
                 BattleName = r.Breaker.DisplayName,
+                CategoryName = r.Category.Name,
                 Age = r.Breaker.GetAgeAtDate(battleEvent.EventDate),
                 Status = r.Status,
                 RegisteredAt = r.RegisteredAt

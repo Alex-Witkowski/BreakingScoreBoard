@@ -253,6 +253,7 @@
                         <HeaderContent>
                             <MudTh>Legal Name</MudTh>
                             <MudTh>Battle Name</MudTh>
+                            <MudTh>Category</MudTh>
                             <MudTh>Age</MudTh>
                             <MudTh>Registered</MudTh>
                             <MudTh Style="text-align: right;">Actions</MudTh>
@@ -260,6 +261,7 @@
                         <RowTemplate>
                             <MudTd DataLabel="Legal Name" Style="color: white;">@context.BreakerName</MudTd>
                             <MudTd DataLabel="Battle Name" Style="color: white;">@context.BattleName</MudTd>
+                            <MudTd DataLabel="Category" Style="color: white;">@context.CategoryName</MudTd>
                             <MudTd DataLabel="Age" Style="color: white;">@context.Age</MudTd>
                             <MudTd DataLabel="Registered" Style="color: rgba(255, 255, 255, 0.7);">
                                 @context.RegisteredAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")

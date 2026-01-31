@@ -28,6 +28,11 @@ public sealed record RegistrationResponse
     public required string BattleName { get; init; }
 
     /// <summary>
+    /// Category name the breaker is registered in.
+    /// </summary>
+    public required string CategoryName { get; init; }
+
+    /// <summary>
     /// Calculated age at event date.
     /// </summary>
     public required int Age { get; init; }
