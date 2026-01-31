@@ -484,6 +484,19 @@
         try
         {
             eventData = await EventsApi.GetEventByIdAsync(EventId);
+            
+            // Auto-select the first active category (PreSelection or Bracket phase)
+            if (eventData != null && !activeCategoryId.HasValue)
+            {
+                var activeCategory = eventData.Categories
+                    .FirstOrDefault(c => c.CurrentPhase == CategoryPhase.PreSelection || c.CurrentPhase == CategoryPhase.Bracket);
+                
+                if (activeCategory != null)
+                {
+                    activeCategoryId = activeCategory.Id;
+                    await LoadNextBattle();
+                }
+            }
         }
         catch (HttpRequestException ex)
         {
@@ -650,7 +663,10 @@
                 Snackbar.Add($"Bracket started for {category.Name}", Severity.Success);
             }
             
+            // Set as active category and load next battle
+            activeCategoryId = category.Id;
             await LoadEventData(); // Refresh data
+            await LoadNextBattle();
         }
         catch (HttpRequestException ex)
         {
@@ -688,6 +704,14 @@
             
             await CategoriesApi.ResetCategoryAsync(eventData.Id, category.Id, adminPin);
             Snackbar.Add($"{category.Name} reset successfully", Severity.Success);
+            
+            // Clear active category if this was the active one
+            if (activeCategoryId == category.Id)
+            {
+                activeCategoryId = null;
+                nextBattle = null;
+            }
+            
             await LoadEventData(); // Refresh data
         }
         catch (HttpRequestException ex)
