@@ -299,16 +299,22 @@ public class EventsController : ControllerBase
             UpdatedAt = battleEvent.UpdatedAt,
             Categories = battleEvent.Categories
                 .OrderBy(c => c.SortOrder)
-                .Select(c => new CategoryResponse
+                .Select(c =>
                 {
-                    Id = c.Id,
-                    EventId = c.EventId,
-                    Name = c.Name,
-                    MaxAge = c.MaxAge,
-                    BracketSize = c.BracketSize,
-                    CurrentPhase = c.CurrentPhase,
-                    SortOrder = c.SortOrder,
-                    RegistrationCount = c.Registrations.Count
+                    var registrationCount = c.Registrations.Count;
+                    return new CategoryResponse
+                    {
+                        Id = c.Id,
+                        EventId = c.EventId,
+                        Name = c.Name,
+                        MaxAge = c.MaxAge,
+                        MinBirthYear = c.MinBirthYear,
+                        MaxBirthYear = c.MaxBirthYear,
+                        BracketSize = AgeCategory.CalculateBracketSize(registrationCount),
+                        CurrentPhase = c.CurrentPhase,
+                        SortOrder = c.SortOrder,
+                        RegistrationCount = registrationCount
+                    };
                 })
                 .ToList()
         };

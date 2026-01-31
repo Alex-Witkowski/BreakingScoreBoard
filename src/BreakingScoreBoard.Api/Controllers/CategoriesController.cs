@@ -341,6 +341,7 @@ public class CategoriesController : ControllerBase
 
     private static CategoryResponse MapToResponse(AgeCategory category)
     {
+        var registrationCount = category.Registrations.Count;
         return new CategoryResponse
         {
             Id = category.Id,
@@ -349,10 +350,10 @@ public class CategoriesController : ControllerBase
             MaxAge = category.MaxAge,
             MinBirthYear = category.MinBirthYear,
             MaxBirthYear = category.MaxBirthYear,
-            BracketSize = category.BracketSize,
+            BracketSize = AgeCategory.CalculateBracketSize(registrationCount),
             CurrentPhase = category.CurrentPhase,
             SortOrder = category.SortOrder,
-            RegistrationCount = category.Registrations.Count
+            RegistrationCount = registrationCount
         };
     }
 
@@ -379,7 +380,7 @@ public class CategoriesController : ControllerBase
             Id = category.Id,
             Name = category.Name,
             MaxAge = category.MaxAge,
-            BracketSize = category.BracketSize,
+            BracketSize = AgeCategory.CalculateBracketSize(registrations.Count),
             Registrations = registrations
         };
     }
