@@ -132,7 +132,8 @@
                     </MudItem>
 
                     <MudItem xs="12" md="6">
-                        <MudDatePicker @bind-Date="birthDateValue"
+                        <MudDatePicker Date="@birthDateValue"
+                                       DateChanged="@OnBirthDateChanged"
                                        Label="Date of Birth"
                                        Variant="Variant.Outlined"
                                        Required="true"
@@ -405,6 +406,12 @@
                 }
             }
         }
+    }
+
+    private void OnBirthDateChanged(DateTime? newDate)
+    {
+        birthDateValue = newDate;
+        UpdateEligibleCategories();
     }
 
     private bool CanSubmit()
