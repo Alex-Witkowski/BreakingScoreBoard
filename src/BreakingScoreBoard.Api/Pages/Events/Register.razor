@@ -176,6 +176,7 @@
                         @foreach (var category in eligibleCategories)
                         {
                             var isSelected = category.Id == selectedCategoryId;
+                            var birthDateRange = GetBirthDateRangeText(category);
                             <div style="display: flex; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 4px; cursor: pointer;" @onclick="@(() => selectedCategoryId = category.Id)">
                                 <input type="radio" id="cat_@category.Id" name="category" checked="@isSelected" style="cursor: pointer;" />
                                 <div style="flex: 1; margin-left: 1rem;">
@@ -183,6 +184,9 @@
                                         @category.Name
                                     </MudText>
                                     <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.6);">
+                                        @birthDateRange
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
                                         Bracket: @category.BracketSize | Registered: @category.RegistrationCount
                                     </MudText>
                                 </div>
@@ -412,6 +416,37 @@
     {
         birthDateValue = newDate;
         UpdateEligibleCategories();
+    }
+
+    private string GetBirthDateRangeText(CategoryResponse category)
+    {
+        if (eventData == null)
+        {
+            return string.Empty;
+        }
+
+        // If using birth year restrictions
+        if (category.MinBirthYear.HasValue || category.MaxBirthYear.HasValue)
+        {
+            var minYear = category.MinBirthYear?.ToString() ?? "–";
+            var maxYear = category.MaxBirthYear?.ToString() ?? "–";
+            return $"Born: {minYear} to {maxYear}";
+        }
+
+        // If using age restrictions
+        if (category.MaxAge.HasValue)
+        {
+            // Calculate birth date range based on max age
+            // To be maxAge or younger at event date, must be born on or after:
+            var oldestBirthDate = eventData.EventDate.AddYears(-category.MaxAge.Value - 1).AddDays(1);
+            
+            // Youngest would be born on event date (age 0)
+            var youngestBirthDate = eventData.EventDate;
+            
+            return $"Born: {oldestBirthDate:dd.MM.yyyy} to {youngestBirthDate:dd.MM.yyyy}";
+        }
+
+        return "All ages";
     }
 
     private bool CanSubmit()
