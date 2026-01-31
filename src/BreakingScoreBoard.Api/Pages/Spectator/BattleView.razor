@@ -13,10 +13,9 @@
     <div class="bracket-header-nav">
         <h1>RANKING BATTLE</h1>
         <div class="nav-links">
-            <a href="/judge/scoring" class="nav-link">Judge Scoring</a>
-            <a href="/spectator/scoreboard" class="nav-link">Spectator Scoreboard</a>
+            <a href="/spectator/scoreboard" class="nav-link">Live Scoreboard</a>
             <a href="/spectator/rankings" class="nav-link">Rankings</a>
-            <a href="/spectator/bracket" class="nav-link active">Battle View</a>
+            <a href="/spectator/bracket" class="nav-link active">Battle Bracket</a>
         </div>
     </div>
 
@@ -431,6 +430,7 @@
             var client = ClientFactory.CreateClient();
             client.BaseAddress = new Uri(Navigation.BaseUri);
 
+            // Load standings
             var standingsResponse = await client.GetAsync($"/public/events/{eventId}/standings");
             if (standingsResponse.IsSuccessStatusCode)
             {
@@ -443,13 +443,18 @@
                     selectedCategory = standings.Categories.First();
                     selectedCategoryId = selectedCategory.CategoryId;
                 }
-
-                // Get event title (you might need to fetch this from a separate endpoint)
-                eventTitle = "Breaking Battle Championship";
             }
             else
             {
                 loadError = $"Error loading standings: {standingsResponse.StatusCode}";
+            }
+
+            // Load scoreboard to get event title
+            var scoreboardResponse = await client.GetAsync($"/public/events/{eventId}/scoreboard");
+            if (scoreboardResponse.IsSuccessStatusCode)
+            {
+                var scoreboard = await scoreboardResponse.Content.ReadFromJsonAsync<ScoreboardResponse>();
+                eventTitle = scoreboard?.EventTitle ?? "Breaking Battle Championship";
             }
         }
         catch (Exception ex)
