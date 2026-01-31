@@ -531,6 +531,9 @@
             
             UpdateEligibleCategories();
             
+            // Force UI re-render since this is called asynchronously
+            StateHasChanged();
+            
             Snackbar.Add($"Editing {breakerDetails.BattleName}", Severity.Info);
         }
         catch (Exception ex)
