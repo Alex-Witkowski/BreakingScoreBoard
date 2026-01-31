@@ -1,0 +1,224 @@
+/* Tournament Bracket Styles */
+
+.tournament-bracket {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.bracket-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #ffffff;
+}
+
+.bracket-header h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #ffa500;
+}
+
+.champion-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    color: #000;
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(255, 165, 0, 0.4);
+}
+
+.champion-badge i {
+    margin-right: 0.5rem;
+}
+
+.bracket-rounds {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.bracket-round {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.round-title {
+    color: #ffa500;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.round-matchups {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: 100%;
+}
+
+.matchup {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 165, 0, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.matchup:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+    border-color: rgba(255, 165, 0, 0.6);
+}
+
+.matchup-live {
+    border-color: #ff4444;
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.5);
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        border-color: #ff4444;
+    }
+    50% {
+        border-color: #ff8888;
+    }
+}
+
+.matchup-completed {
+    border-color: rgba(40, 167, 69, 0.5);
+}
+
+.competitor {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    margin-bottom: 0.25rem;
+    border-radius: 4px;
+    min-height: 50px;
+    transition: background 0.3s ease;
+}
+
+.competitor:last-of-type {
+    margin-bottom: 0;
+}
+
+.competitor .name {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.competitor .score {
+    font-weight: bold;
+    font-size: 0.95rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+.winner-score {
+    background: #28a745;
+    color: #ffffff;
+}
+
+.loser-score {
+    background: rgba(255, 255, 255, 0.1);
+    color: #cccccc;
+}
+
+.competitor-winner {
+    background: rgba(40, 167, 69, 0.2);
+    border-left: 4px solid #28a745;
+}
+
+.competitor-winner .name {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.competitor-loser {
+    opacity: 0.6;
+}
+
+.vs-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 165, 0, 0.5), transparent);
+    margin: 0.25rem 0;
+}
+
+.matchup-status {
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.matchup-status .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .bracket-rounds {
+        flex-direction: column;
+    }
+    
+    .bracket-round {
+        width: 100%;
+    }
+
+    .bracket-header h3 {
+        font-size: 1.5rem;
+    }
+
+    .champion-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1.5rem;
+    }
+}
+
+/* Category Tabs */
+.category-tabs {
+    margin-bottom: 2rem;
+}
+
+.category-tabs .nav-link {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    margin-right: 0.5rem;
+    border-radius: 8px 8px 0 0;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.category-tabs .nav-link:hover {
+    background: rgba(255, 165, 0, 0.1);
+    border-color: rgba(255, 165, 0, 0.5);
+}
+
+.category-tabs .nav-link.active {
+    background: linear-gradient(135deg, #ffa500, #ff8c00);
+    color: #000;
+    border-color: #ffa500;
+    font-weight: bold;
+}

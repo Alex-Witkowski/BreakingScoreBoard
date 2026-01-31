@@ -1,0 +1,153 @@
+@using BreakingScoreBoard.Api.Contracts.Public
+@using BreakingScoreBoard.Domain.Enums
+
+<div class="tournament-bracket">
+    @if (CategoryBracket?.Rounds != null && CategoryBracket.Rounds.Any())
+    {
+        <!-- Category Header -->
+        <div class="bracket-header">
+            <h3>@CategoryBracket.CategoryName</h3>
+            @if (CategoryBracket.Champion != null)
+            {
+                <div class="champion-badge">
+                    <i class="bi bi-trophy-fill"></i>
+                    <strong>Champion: @CategoryBracket.Champion.Name</strong>
+                </div>
+            }
+        </div>
+
+        <!-- Bracket Rounds -->
+        <div class="bracket-rounds">
+            @{
+                // Order rounds from earliest to latest (Top8 -> Top4 -> Final)
+                var orderedRounds = CategoryBracket.Rounds
+                    .OrderByDescending(r => (int)r.Key)
+                    .ToList();
+            }
+
+            @foreach (var round in orderedRounds)
+            {
+                <div class="bracket-round">
+                    <h5 class="round-title">@GetRoundTitle(round.Key)</h5>
+                    <div class="round-matchups">
+                        @foreach (var matchup in round.Value)
+                        {
+                            <div class="matchup @GetMatchupClass(matchup)">
+                                <!-- Breaker 1 -->
+                                <div class="competitor @GetCompetitorClass(matchup, matchup.Breaker1)">
+                                    @if (matchup.Breaker1 != null)
+                                    {
+                                        <span class="name">@matchup.Breaker1.Name</span>
+                                        @if (matchup.Winner?.Id == matchup.Breaker1.Id && matchup.WinnerAvgScore.HasValue)
+                                        {
+                                            <span class="score winner-score">@matchup.WinnerAvgScore.Value.ToString("F2")</span>
+                                        }
+                                        else if (matchup.Winner?.Id != matchup.Breaker1.Id && matchup.LoserAvgScore.HasValue)
+                                        {
+                                            <span class="score loser-score">@matchup.LoserAvgScore.Value.ToString("F2")</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="name text-muted">TBD</span>
+                                    }
+                                </div>
+
+                                <!-- VS Divider -->
+                                <div class="vs-divider"></div>
+
+                                <!-- Breaker 2 -->
+                                <div class="competitor @GetCompetitorClass(matchup, matchup.Breaker2)">
+                                    @if (matchup.Breaker2 != null)
+                                    {
+                                        <span class="name">@matchup.Breaker2.Name</span>
+                                        @if (matchup.Winner?.Id == matchup.Breaker2.Id && matchup.WinnerAvgScore.HasValue)
+                                        {
+                                            <span class="score winner-score">@matchup.WinnerAvgScore.Value.ToString("F2")</span>
+                                        }
+                                        else if (matchup.Winner?.Id != matchup.Breaker2.Id && matchup.LoserAvgScore.HasValue)
+                                        {
+                                            <span class="score loser-score">@matchup.LoserAvgScore.Value.ToString("F2")</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="name text-muted">TBD</span>
+                                    }
+                                </div>
+
+                                <!-- Status Badge -->
+                                @if (matchup.Status.HasValue)
+                                {
+                                    <div class="matchup-status">
+                                        <span class="badge bg-@GetStatusBadge(matchup.Status.Value.ToString())">
+                                            @matchup.Status.Value
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-diagram-3" style="font-size: 3rem;"></i>
+            <p class="mt-3">No bracket data available</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public CategoryBracketResponse? CategoryBracket { get; set; }
+
+    private string GetRoundTitle(BracketLevel level)
+    {
+        return level switch
+        {
+            BracketLevel.PreSelection => "Pre-Selection",
+            BracketLevel.Top64 => "Round of 64",
+            BracketLevel.Top32 => "Round of 32",
+            BracketLevel.Top16 => "Round of 16",
+            BracketLevel.Top8 => "Quarter-Finals",
+            BracketLevel.Top4 => "Semi-Finals",
+            BracketLevel.Final => "Final",
+            _ => level.ToString()
+        };
+    }
+
+    private string GetMatchupClass(BracketMatchup matchup)
+    {
+        if (matchup.Status == BattleStatus.InProgress || matchup.Status == BattleStatus.RevealCountdown)
+            return "matchup-live";
+        if (matchup.Status == BattleStatus.Completed || matchup.Status == BattleStatus.Walkover)
+            return "matchup-completed";
+        return "";
+    }
+
+    private string GetCompetitorClass(BracketMatchup matchup, BreakerSummary? breaker)
+    {
+        if (breaker == null) return "";
+        if (matchup.Winner?.Id == breaker.Id) return "competitor-winner";
+        if (matchup.Status == BattleStatus.Completed || matchup.Status == BattleStatus.Walkover)
+            return "competitor-loser";
+        return "";
+    }
+
+    private string GetStatusBadge(string status)
+    {
+        return status switch
+        {
+            "Scheduled" => "secondary",
+            "InProgress" => "primary",
+            "RevealCountdown" => "warning",
+            "Completed" => "success",
+            "Walkover" => "info",
+            _ => "dark"
+        };
+    }
+}

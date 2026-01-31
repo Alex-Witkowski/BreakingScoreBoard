@@ -5,193 +5,100 @@
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager Navigation
 
-<PageTitle>Live Scoreboard</PageTitle>
+<PageTitle>Tournament Brackets</PageTitle>
 
 <div class="container-fluid py-4">
-    <h1 class="mb-4 text-info">
-        <i class="bi bi-tv-fill"></i> Live Scoreboard
+    <h1 class="mb-4 text-center" style="color: #ffa500; font-weight: bold;">
+        <i class="bi bi-diagram-3-fill"></i> Tournament Brackets
     </h1>
 
     <!-- Event Selector -->
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card shadow">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Select Event</h5>
-                </div>
+    <div class="row mb-4">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 165, 0, 0.3);">
                 <div class="card-body">
                     @if (!string.IsNullOrEmpty(loadError))
                     {
                         <div class="alert alert-danger">@loadError</div>
                     }
 
-                    <div class="mb-3">
-                        <label class="form-label">Event ID</label>
-                        <input type="text" @bind="eventIdInput" @bind:event="oninput" class="form-control" placeholder="Enter Event ID" />
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label" style="color: #ffffff;">Event ID</label>
+                            <input type="text" @bind="eventIdInput" @bind:event="oninput" class="form-control" placeholder="Enter Event ID" />
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" @onclick="LoadBrackets" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <text> Loading...</text>
+                                }
+                                else
+                                {
+                                    <text>Load Brackets</text>
+                                }
+                            </button>
+                        </div>
                     </div>
 
-                    <button class="btn btn-primary w-100" @onclick="LoadScoreboard" disabled="@isLoading">
-                        @if (isLoading)
-                        {
-                            <span class="spinner-border spinner-border-sm"></span>
-                            <text> Loading...</text>
-                        }
-                        else
-                        {
-                            <text>Load Scoreboard</text>
-                        }
-                    </button>
-
-                    @if (scoreboard != null)
+                    @if (brackets != null)
                     {
-                        <div class="mt-3">
-                            <button class="btn btn-outline-secondary w-100" @onclick="LoadScoreboard">
+                        <div class="mt-3 text-center">
+                            <h5 style="color: #ffa500;">@brackets.EventTitle</h5>
+                            <button class="btn btn-outline-warning btn-sm mt-2" @onclick="LoadBrackets">
                                 <i class="bi bi-arrow-clockwise"></i> Refresh
                             </button>
+                            <span class="text-muted ms-3">
+                                <i class="bi bi-clock"></i> Auto-refresh every 30s
+                            </span>
                         </div>
                     }
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-8">
-            @if (scoreboard != null)
-            {
-                <!-- Event Info -->
-                <div class="card shadow mb-3">
-                    <div class="card-header bg-dark text-white">
-                        <h4 class="mb-0">@scoreboard.EventTitle</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-info">Event ID: @scoreboard.EventId.ToString()[..8]</span>
-                            <span class="text-muted">
-                                <i class="bi bi-clock"></i> Auto-refresh every 30s
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Active Battles -->
-                @if (scoreboard.ActiveBattles.Any())
-                {
-                    <div class="card shadow mb-3">
-                        <div class="card-header bg-danger text-white">
-                            <h5 class="mb-0">
-                                <i class="bi bi-broadcast"></i> Live Battles (@scoreboard.ActiveBattles.Count)
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            @foreach (var battle in scoreboard.ActiveBattles)
-                            {
-                                <div class="card mb-3 border-danger">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-5">
-                                                <h5 class="text-primary">@battle.Breaker1.Name</h5>
-                                            </div>
-                                            <div class="col-md-2 text-center">
-                                                <span class="badge bg-danger">VS</span>
-                                            </div>
-                                            <div class="col-md-5 text-end">
-                                                <h5 class="text-primary">@battle.Breaker2.Name</h5>
-                                            </div>
-                                        </div>
-                                        <hr/>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <small class="text-muted">
-                                                    <i class="bi bi-tag"></i> @battle.CategoryName
-                                                </small>
-                                            </div>
-                                            <div class="col-md-6 text-end">
-                                                <span class="badge bg-@GetStatusBadge(battle.Status.ToString())">
-                                                    @battle.Status
-                                                </span>
-                                                <span class="badge bg-secondary ms-2">
-                                                    Judges: @battle.JudgesScored/@battle.JudgesTotal
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <!-- Recent Results -->
-                @if (scoreboard.RecentResults.Any())
-                {
-                    <div class="card shadow">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">
-                                <i class="bi bi-trophy"></i> Recent Results
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="list-group">
-                                @foreach (var result in scoreboard.RecentResults.Take(10))
-                                {
-                                    <div class="list-group-item">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-1">
-                                                    <i class="bi bi-trophy-fill text-warning"></i>
-                                                    <strong>@result.Winner.Name</strong>
-                                                    @if (result.WinnerAvgScore.HasValue)
-                                                    {
-                                                        <span class="badge bg-success ms-2">@result.WinnerAvgScore.Value.ToString("F2")</span>
-                                                    }
-                                                </h6>
-                                                <small class="text-muted">
-                                                    defeated @result.Loser.Name
-                                                    @if (result.LoserAvgScore.HasValue)
-                                                    {
-                                                        <span class="badge bg-secondary ms-1">@result.LoserAvgScore.Value.ToString("F2")</span>
-                                                    }
-                                                </small>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="badge bg-info">@result.CategoryName</div>
-                                                <br/>
-                                                <small class="text-muted">
-                                                    @result.CompletedAt.ToString("HH:mm")
-                                                </small>
-                                            </div>
-                                        </div>
-                                        @if (result.IsWalkover)
-                                        {
-                                            <span class="badge bg-warning text-dark mt-2">Walkover</span>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                }
-
-                @if (!scoreboard.ActiveBattles.Any() && !scoreboard.RecentResults.Any())
-                {
-                    <div class="card shadow">
-                        <div class="card-body text-center text-muted py-5">
-                            <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
-                            <p class="mt-3">No battles available yet. Check back soon!</p>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="card shadow">
-                    <div class="card-body text-center text-muted py-5">
-                        <i class="bi bi-tv" style="font-size: 3rem;"></i>
-                        <p class="mt-3">Enter an Event ID to view the scoreboard</p>
-                    </div>
-                </div>
-            }
-        </div>
     </div>
+
+    <!-- Brackets Display -->
+    @if (brackets != null && brackets.Categories.Any())
+    {
+        <!-- Category Tabs -->
+        @if (brackets.Categories.Count > 1)
+        {
+            <ul class="nav nav-tabs category-tabs justify-content-center mb-4">
+                @foreach (var category in brackets.Categories)
+                {
+                    var index = brackets.Categories.IndexOf(category);
+                    <li class="nav-item">
+                        <button class="nav-link @(selectedCategoryIndex == index ? "active" : "")" 
+                                @onclick="() => selectedCategoryIndex = index">
+                            @category.CategoryName
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+
+        <!-- Display Selected Category Bracket -->
+        @if (selectedCategoryIndex >= 0 && selectedCategoryIndex < brackets.Categories.Count)
+        {
+            <TournamentBracket CategoryBracket="@brackets.Categories[selectedCategoryIndex]" />
+        }
+    }
+    else if (brackets != null)
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-diagram-3" style="font-size: 3rem;"></i>
+            <p class="mt-3">No categories available for this event yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-tv" style="font-size: 3rem;"></i>
+            <p class="mt-3">Enter an Event ID to view the tournament brackets</p>
+        </div>
+    }
 </div>
 
 @code {
@@ -199,35 +106,36 @@
     public string? EventIdFromQuery { get; set; }
     
     private string eventIdInput = string.Empty;
-    private ScoreboardResponse? scoreboard;
+    private EventBracketsResponse? brackets;
     private bool isLoading = false;
     private string? loadError;
     private System.Threading.Timer? refreshTimer;
+    private int selectedCategoryIndex = 0;
 
     protected override async Task OnInitializedAsync()
     {
         // Auto-refresh every 30 seconds
         refreshTimer = new System.Threading.Timer(async _ =>
         {
-            if (scoreboard != null)
+            if (brackets != null)
             {
                 await InvokeAsync(async () =>
                 {
-                    await LoadScoreboard();
+                    await LoadBrackets();
                     StateHasChanged();
                 });
             }
         }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
         
-        // If eventId provided in query string, auto-load the scoreboard
+        // If eventId provided in query string, auto-load the brackets
         if (!string.IsNullOrWhiteSpace(EventIdFromQuery))
         {
             eventIdInput = EventIdFromQuery;
-            await LoadScoreboard();
+            await LoadBrackets();
         }
     }
 
-    private async Task LoadScoreboard()
+    private async Task LoadBrackets()
     {
         if (string.IsNullOrWhiteSpace(eventIdInput) || !Guid.TryParse(eventIdInput, out var eventId))
         {
@@ -243,39 +151,28 @@
             var client = ClientFactory.CreateClient();
             client.BaseAddress = new Uri(Navigation.BaseUri);
             
-            var response = await client.GetAsync($"/public/events/{eventId}/scoreboard");
+            var response = await client.GetAsync($"/public/events/{eventId}/brackets");
 
             if (response.IsSuccessStatusCode)
             {
-                scoreboard = await response.Content.ReadFromJsonAsync<ScoreboardResponse>();
+                brackets = await response.Content.ReadFromJsonAsync<EventBracketsResponse>();
+                selectedCategoryIndex = 0; // Reset to first category
             }
             else
             {
-                loadError = $"Error loading scoreboard: {response.StatusCode}";
-                scoreboard = null;
+                loadError = $"Error loading brackets: {response.StatusCode}";
+                brackets = null;
             }
         }
         catch (Exception ex)
         {
             loadError = $"Exception: {ex.Message}";
-            scoreboard = null;
+            brackets = null;
         }
         finally
         {
             isLoading = false;
         }
-    }
-
-    private string GetStatusBadge(string status)
-    {
-        return status switch
-        {
-            "Scheduled" => "secondary",
-            "InProgress" => "primary",
-            "RevealCountdown" => "warning",
-            "Completed" => "success",
-            _ => "dark"
-        };
     }
 
     public void Dispose()
