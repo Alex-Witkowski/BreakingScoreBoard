@@ -3,13 +3,15 @@
         <MudText>Are you sure you want to delete the event <strong>@EventTitle</strong>?</MudText>
         <MudText Class="mt-2" Typo="Typo.body2" Color="Color.Error">This action cannot be undone.</MudText>
         
-        <MudTextField @bind-Value="adminPin"
-                      Label="Admin PIN"
-                      Variant="Variant.Filled"
-                      InputType="InputType.Password"
-                      Required="true"
-                      Class="mt-4"
-                      HelperText="Enter admin PIN to confirm deletion" />
+        <div class="mt-4">
+            <MudTextField @bind-Value="adminPin"
+                          Label="Admin PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          HelperText="Enter admin PIN to confirm deletion"
+                          Style="--mud-palette-text-primary: rgba(0, 0, 0, 0.87); --mud-palette-lines-default: rgba(0, 0, 0, 0.42);" />
+        </div>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
