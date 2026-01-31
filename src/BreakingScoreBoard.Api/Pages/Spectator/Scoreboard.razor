@@ -1,4 +1,5 @@
 @page "/spectator/scoreboard"
+@rendermode InteractiveServer
 @using BreakingScoreBoard.Api.Contracts.Public
 @using System.Net.Http.Json
 @inject IHttpClientFactory ClientFactory
@@ -194,13 +195,16 @@
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "eventId")]
+    public string? EventIdFromQuery { get; set; }
+    
     private string eventIdInput = string.Empty;
     private ScoreboardResponse? scoreboard;
     private bool isLoading = false;
     private string? loadError;
     private System.Threading.Timer? refreshTimer;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         // Auto-refresh every 30 seconds
         refreshTimer = new System.Threading.Timer(async _ =>
@@ -214,6 +218,13 @@
                 });
             }
         }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        
+        // If eventId provided in query string, auto-load the scoreboard
+        if (!string.IsNullOrWhiteSpace(EventIdFromQuery))
+        {
+            eventIdInput = EventIdFromQuery;
+            await LoadScoreboard();
+        }
     }
 
     private async Task LoadScoreboard()

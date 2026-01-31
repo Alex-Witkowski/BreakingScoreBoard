@@ -1,4 +1,5 @@
 @page "/judge/scoring"
+@rendermode InteractiveServer
 @using BreakingScoreBoard.Api.Models
 @using BreakingScoreBoard.Api.Contracts.Battles
 @using System.Net.Http.Json
@@ -183,6 +184,9 @@
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "eventId")]
+    public string? EventIdFromQuery { get; set; }
+    
     private bool isAuthenticated = false;
     private string judgePin = string.Empty;
     private string? authError;
@@ -196,6 +200,16 @@
     private string? loadError;
     private string? scoreError;
     private string? scoreSuccess;
+    
+    protected override void OnInitialized()
+    {
+        // If eventId provided in query string, populate the battle ID field
+        // Note: We don't auto-load because authentication is required first
+        if (!string.IsNullOrWhiteSpace(EventIdFromQuery))
+        {
+            battleIdInput = EventIdFromQuery;
+        }
+    }
 
     private void Authenticate()
     {

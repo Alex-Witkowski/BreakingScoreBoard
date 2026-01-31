@@ -97,9 +97,29 @@
             </div>
             @foreach (var evt in events.Take(5))
             {
-                <div class="event-item" @onclick='() => Navigation.NavigateTo($"/events/{evt.Id}")'>
-                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="mr-2" />
-                    @evt.Title - @evt.Location - @evt.EventDate.ToString("dd.MM.yyyy")
+                <div class="event-item">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <div style="flex: 1; cursor: pointer;" @onclick='() => Navigation.NavigateTo($"/events/{evt.Id}")'>
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="mr-2" />
+                            @evt.Title - @evt.Location - @evt.EventDate.ToString("dd.MM.yyyy")
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <MudTooltip Text="Spectator Scoreboard">
+                                <MudIconButton Icon="@Icons.Material.Filled.Tv" 
+                                               Size="Size.Small" 
+                                               Color="Color.Info"
+                                               Href="@($"/spectator/scoreboard?eventId={evt.Id}")"
+                                               @onclick:stopPropagation="true" />
+                            </MudTooltip>
+                            <MudTooltip Text="Judge Scoring">
+                                <MudIconButton Icon="@Icons.Material.Filled.Star" 
+                                               Size="Size.Small" 
+                                               Color="Color.Success"
+                                               Href="@($"/judge/scoring?eventId={evt.Id}")"
+                                               @onclick:stopPropagation="true" />
+                            </MudTooltip>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
