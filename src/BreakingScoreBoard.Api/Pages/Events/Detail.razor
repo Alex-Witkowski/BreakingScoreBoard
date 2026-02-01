@@ -332,18 +332,8 @@
                         </MudGrid>
                         
                         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                            @if (nextBattle.Status == BattleStatus.Scheduled)
-                            {
-                                <MudButton Variant="Variant.Filled" 
-                                           Color="Color.Success" 
-                                           OnClick="@StartNextBattle"
-                                           StartIcon="@Icons.Material.Filled.PlayArrow">
-                                    Start Battle
-                                </MudButton>
-                            }
-                            
-                            <MudButton Variant="Variant.Outlined" 
-                                       Color="Color.Info" 
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
                                        Href="@($"/judge/scoring?eventId={eventData.Id}&battleId={nextBattle.Id}")"
                                        StartIcon="@Icons.Material.Filled.Score">
                                 Go to Scoring
@@ -713,37 +703,6 @@
             }
             
             await LoadEventData(); // Refresh data
-        }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
-        }
-    }
-    
-    private async Task StartNextBattle()
-    {
-        if (nextBattle == null || eventData == null) return;
-        
-        try
-        {
-            // Prompt for admin PIN
-            var parameters = new DialogParameters
-            {
-                ["Title"] = "Enter Admin PIN",
-                ["Message"] = "Admin PIN required to start battle"
-            };
-            
-            var pinDialog = await DialogService.ShowAsync<PinInputDialog>("Admin PIN", parameters);
-            var pinResult = await pinDialog.Result;
-            
-            if (pinResult.Canceled || pinResult.Data is not string adminPin)
-            {
-                return;
-            }
-            
-            await BattlesApi.StartBattleAsync(nextBattle.Id, adminPin);
-            Snackbar.Add("Battle started successfully", Severity.Success);
-            await LoadNextBattle(); // Refresh to show updated status
         }
         catch (HttpRequestException ex)
         {
