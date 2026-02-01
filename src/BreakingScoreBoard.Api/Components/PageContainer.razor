@@ -1,0 +1,33 @@
+<div class="page-container">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <h1 class="page-header">@Title</h1>
+    }
+    
+    @if (Breadcrumbs.Count > 0)
+    {
+        <div class="nav-tabs">
+            @foreach (var (label, isActive) in Breadcrumbs)
+            {
+                <button class="nav-tab @(isActive ? "active" : "")" disabled="@isActive">
+                    @label
+                </button>
+            }
+        </div>
+    }
+    
+    <div class="content">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+    
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [Parameter]
+    public List<(string Label, bool IsActive)> Breadcrumbs { get; set; } = new();
+}

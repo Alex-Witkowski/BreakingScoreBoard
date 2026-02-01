@@ -13,7 +13,7 @@
 
 <PageTitle>@(eventData?.Title ?? "Event Details")</PageTitle>
 
-<div class="dashboard-container">
+<PageContainer>
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
         <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/organizer/dashboard")'>Dashboard</button>
@@ -28,9 +28,9 @@
     @if (isLoading)
     {
         <MudPaper Class="form-panel pa-6">
-            <div style="text-align: center; padding: 2rem;">
+            <div class="loading-container">
                 <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
-                <MudText Typo="Typo.body1" Class="mt-4" Style="color: rgba(255, 255, 255, 0.7);">Loading event details...</MudText>
+                <MudText Typo="Typo.body1" Class="mt-4 loading-text">Loading event details...</MudText>
             </div>
         </MudPaper>
     }
@@ -38,7 +38,7 @@
     {
         <MudPaper Class="form-panel pa-6">
             <div class="empty-state">
-                <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Style="font-size: 4rem; opacity: 0.3;" />
+                <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Class="empty-icon" />
                 <MudText Typo="Typo.h5" Class="mt-4">Event not found</MudText>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4" OnClick='() => Navigation.NavigateTo("/organizer/dashboard")'>
                     Back to Dashboard
@@ -387,7 +387,7 @@
             </MudButton>
         </div>
     }
-</div>
+</PageContainer>
 
 @code {
     [Parameter]

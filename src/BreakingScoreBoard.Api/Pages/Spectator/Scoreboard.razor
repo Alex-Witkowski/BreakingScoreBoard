@@ -7,192 +7,84 @@
 
 <PageTitle>Live Scoreboard</PageTitle>
 
-<div class="container-fluid py-4">
-    <h1 class="mb-4 text-info">
-        <i class="bi bi-tv-fill"></i> Live Scoreboard
-    </h1>
+<PageContainer Title="Live Scoreboard">
 
-    <!-- Event Selector -->
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card shadow">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Select Event</h5>
-                </div>
-                <div class="card-body">
-                    @if (!string.IsNullOrEmpty(loadError))
-                    {
-                        <div class="alert alert-danger">@loadError</div>
-                    }
+    <MudGrid>
+        <MudItem xs="12" lg="4">
+            <MudPaper Class="form-panel pa-4">
+                <div class="subsection-header">Select Event</div>
+                @if (!string.IsNullOrEmpty(loadError))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4">@loadError</MudAlert>
+                }
+                <MudTextField @bind-Value="eventIdInput" Label="Event ID" Variant="Variant.Outlined" Class="mb-4" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="@LoadScoreboard" Disabled="@isLoading" Class="mb-3">
+                    @if (isLoading) { <span>Loading...</span> } else { <span>Load Scoreboard</span> }
+                </MudButton>
+                @if (scoreboard != null)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick="@LoadScoreboard">Refresh</MudButton>
+                }
+            </MudPaper>
+        </MudItem>
 
-                    <div class="mb-3">
-                        <label class="form-label">Event ID</label>
-                        <input type="text" @bind="eventIdInput" @bind:event="oninput" class="form-control" placeholder="Enter Event ID" />
-                    </div>
-
-                    <button class="btn btn-primary w-100" @onclick="LoadScoreboard" disabled="@isLoading">
-                        @if (isLoading)
-                        {
-                            <span class="spinner-border spinner-border-sm"></span>
-                            <text> Loading...</text>
-                        }
-                        else
-                        {
-                            <text>Load Scoreboard</text>
-                        }
-                    </button>
-
-                    @if (scoreboard != null)
-                    {
-                        <div class="mt-3">
-                            <button class="btn btn-outline-secondary w-100" @onclick="LoadScoreboard">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh
-                            </button>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-8">
+        <MudItem xs="12" lg="8">
             @if (scoreboard != null)
             {
-                <!-- Event Info -->
-                <div class="card shadow mb-3">
-                    <div class="card-header bg-dark text-white">
-                        <h4 class="mb-0">@scoreboard.EventTitle</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-info">Event ID: @scoreboard.EventId.ToString()[..8]</span>
-                            <span class="text-muted">
-                                <i class="bi bi-clock"></i> Auto-refresh every 30s
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <MudPaper Class="form-panel pa-4 mb-4">
+                    <h2 class="section-header no-margin-top">@scoreboard.EventTitle</h2>
+                    <small class="text-muted-light">Event ID: @scoreboard.EventId.ToString()[..8]</small>
+                </MudPaper>
 
-                <!-- Active Battles -->
                 @if (scoreboard.ActiveBattles.Any())
                 {
-                    <div class="card shadow mb-3">
-                        <div class="card-header bg-danger text-white">
-                            <h5 class="mb-0">
-                                <i class="bi bi-broadcast"></i> Live Battles (@scoreboard.ActiveBattles.Count)
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            @foreach (var battle in scoreboard.ActiveBattles)
-                            {
-                                <div class="card mb-3 border-danger">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-5">
-                                                <h5 class="text-primary">@battle.Breaker1.Name</h5>
-                                            </div>
-                                            <div class="col-md-2 text-center">
-                                                <span class="badge bg-danger">VS</span>
-                                            </div>
-                                            <div class="col-md-5 text-end">
-                                                <h5 class="text-primary">@battle.Breaker2.Name</h5>
-                                            </div>
-                                        </div>
-                                        <hr/>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <small class="text-muted">
-                                                    <i class="bi bi-tag"></i> @battle.CategoryName
-                                                </small>
-                                            </div>
-                                            <div class="col-md-6 text-end">
-                                                <span class="badge bg-@GetStatusBadge(battle.Status.ToString())">
-                                                    @battle.Status
-                                                </span>
-                                                <span class="badge bg-secondary ms-2">
-                                                    Judges: @battle.JudgesScored/@battle.JudgesTotal
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
+                    <MudPaper Class="form-panel pa-4 mb-4">
+                        <h3 class="section-header no-margin-top">Live Battles (@scoreboard.ActiveBattles.Count)</h3>
+                        @foreach (var battle in scoreboard.ActiveBattles)
+                        {
+                            <div class="battle-item">
+                                <div class="battle-names">
+                                    <strong class="battle-name">@battle.Breaker1.Name</strong>
+                                    <span>VS</span>
+                                    <strong class="battle-name">@battle.Breaker2.Name</strong>
                                 </div>
-                            }
-                        </div>
-                    </div>
+                                <small class="text-muted-light">@battle.CategoryName - Status: @battle.Status</small>
+                            </div>
+                        }
+                    </MudPaper>
                 }
 
-                <!-- Recent Results -->
                 @if (scoreboard.RecentResults.Any())
                 {
-                    <div class="card shadow">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">
-                                <i class="bi bi-trophy"></i> Recent Results
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="list-group">
-                                @foreach (var result in scoreboard.RecentResults.Take(10))
-                                {
-                                    <div class="list-group-item">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-1">
-                                                    <i class="bi bi-trophy-fill text-warning"></i>
-                                                    <strong>@result.Winner.Name</strong>
-                                                    @if (result.WinnerAvgScore.HasValue)
-                                                    {
-                                                        <span class="badge bg-success ms-2">@result.WinnerAvgScore.Value.ToString("F2")</span>
-                                                    }
-                                                </h6>
-                                                <small class="text-muted">
-                                                    defeated @result.Loser.Name
-                                                    @if (result.LoserAvgScore.HasValue)
-                                                    {
-                                                        <span class="badge bg-secondary ms-1">@result.LoserAvgScore.Value.ToString("F2")</span>
-                                                    }
-                                                </small>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="badge bg-info">@result.CategoryName</div>
-                                                <br/>
-                                                <small class="text-muted">
-                                                    @result.CompletedAt.ToString("HH:mm")
-                                                </small>
-                                            </div>
-                                        </div>
-                                        @if (result.IsWalkover)
-                                        {
-                                            <span class="badge bg-warning text-dark mt-2">Walkover</span>
-                                        }
-                                    </div>
-                                }
+                    <MudPaper Class="form-panel pa-4">
+                        <h3 class="section-header no-margin-top">Recent Results</h3>
+                        @foreach (var result in scoreboard.RecentResults.Take(10))
+                        {
+                            <div class="result-item">
+                                <strong>@result.Winner.Name</strong> defeated <strong>@result.Loser.Name</strong>
+                                <small class="text-muted-light result-meta">@result.CategoryName - @result.CompletedAt.ToString("HH:mm")</small>
+                                @if (result.IsWalkover) { <small class="result-walkover">Walkover</small> }
                             </div>
-                        </div>
-                    </div>
+                        }
+                    </MudPaper>
                 }
 
                 @if (!scoreboard.ActiveBattles.Any() && !scoreboard.RecentResults.Any())
                 {
-                    <div class="card shadow">
-                        <div class="card-body text-center text-muted py-5">
-                            <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
-                            <p class="mt-3">No battles available yet. Check back soon!</p>
-                        </div>
-                    </div>
+                    <MudPaper Class="form-panel empty-state">
+                        <p>No battles available yet</p>
+                    </MudPaper>
                 }
             }
             else
             {
-                <div class="card shadow">
-                    <div class="card-body text-center text-muted py-5">
-                        <i class="bi bi-tv" style="font-size: 3rem;"></i>
-                        <p class="mt-3">Enter an Event ID to view the scoreboard</p>
-                    </div>
-                </div>
+                <MudPaper Class="form-panel empty-state">
+                    <p>Enter an Event ID to view the scoreboard</p>
+                </MudPaper>
             }
-        </div>
-    </div>
-</div>
+        </MudItem>
+    </MudGrid>
+</PageContainer>
 
 @code {
     [SupplyParameterFromQuery(Name = "eventId")]
@@ -206,7 +98,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Auto-refresh every 30 seconds
         refreshTimer = new System.Threading.Timer(async _ =>
         {
             if (scoreboard != null)
@@ -219,7 +110,6 @@
             }
         }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
         
-        // If eventId provided in query string, auto-load the scoreboard
         if (!string.IsNullOrWhiteSpace(EventIdFromQuery))
         {
             eventIdInput = EventIdFromQuery;
@@ -242,7 +132,6 @@
         {
             var client = ClientFactory.CreateClient();
             client.BaseAddress = new Uri(Navigation.BaseUri);
-            
             var response = await client.GetAsync($"/public/events/{eventId}/scoreboard");
 
             if (response.IsSuccessStatusCode)
@@ -251,7 +140,7 @@
             }
             else
             {
-                loadError = $"Error loading scoreboard: {response.StatusCode}";
+                loadError = $"Error: {response.StatusCode}";
                 scoreboard = null;
             }
         }
@@ -264,18 +153,6 @@
         {
             isLoading = false;
         }
-    }
-
-    private string GetStatusBadge(string status)
-    {
-        return status switch
-        {
-            "Scheduled" => "secondary",
-            "InProgress" => "primary",
-            "RevealCountdown" => "warning",
-            "Completed" => "success",
-            _ => "dark"
-        };
     }
 
     public void Dispose()
