@@ -1,0 +1,69 @@
+# .NET build outputs
+bin/
+obj/
+out/
+publish/
+dist/
+
+# .NET specific
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.cache
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+coveragereport/
+
+# Logs
+logs/
+*.log
+
+# User secrets
+secrets.json
+
+# Environment files (will be provided at runtime)
+.env
+.env.*
+appsettings.*.local.json
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.sln.iml
+*.rsuser
+*.vssscc
+*.vspscc
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# Documentation (not needed in image)
+*.md
+!README.md
+specs/
+.specify/
+
+# Dev container files
+.devcontainer/
+
+# GitHub files
+.github/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
