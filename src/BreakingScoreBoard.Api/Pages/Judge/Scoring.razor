@@ -23,23 +23,39 @@
                         <MudAlert Severity="Severity.Error" Class="mb-4">@authError</MudAlert>
                     }
 
+                    <MudTextField @bind-Value="battleIdInput" 
+                                  Label="Battle ID" 
+                                  Variant="Variant.Outlined"
+                                  HelperText="Enter the battle ID you want to score"
+                                  Class="mb-4" />
+
                     <MudTextField @bind-Value="judgePin" 
                                   Label="Judge PIN" 
                                   InputType="InputType.Password"
                                   Variant="Variant.Outlined"
+                                  HelperText="Enter your judge PIN"
                                   Class="mb-4" />
 
                     <MudButton Variant="Variant.Filled" 
                                Color="Color.Success" 
                                FullWidth="true"
                                OnClick="@Authenticate"
+                               Disabled="@isAuthenticating"
                                Class="mb-3">
-                        <MudIcon Icon="@Icons.Material.Filled.VpnLock" Class="mr-2" />
-                        Authenticate
+                        @if (isAuthenticating)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Validating...</span>
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.VpnLock" Class="mr-2" />
+                            <span>Authenticate</span>
+                        }
                     </MudButton>
 
                     <MudAlert Severity="Severity.Info">
-                        Enter the judge PIN provided by the event organizer to access scoring.
+                        Enter the battle ID and judge PIN provided by the event organizer.
                     </MudAlert>
                 </MudPaper>
             </MudItem>
@@ -203,10 +219,12 @@
     public string? BattleIdFromQuery { get; set; }
     
     private bool isAuthenticated = false;
+    private bool isAuthenticating = false;
     private string judgePin = string.Empty;
     private string? authError;
 
     private string battleIdInput = string.Empty;
+    private Guid? eventIdForPin;
     private BattleDetailResponse? currentBattle;
     private SubmitScoresViewModel scoreModel = new();
     
@@ -219,7 +237,6 @@
     protected override void OnInitialized()
     {
         // If battleId provided in query string, populate the battle ID field
-        // Note: We don't auto-load because authentication is required first
         if (!string.IsNullOrWhiteSpace(BattleIdFromQuery))
         {
             battleIdInput = BattleIdFromQuery;
@@ -230,17 +247,87 @@
         }
     }
 
-    private void Authenticate()
+    private async Task Authenticate()
     {
-        if (string.IsNullOrWhiteSpace(judgePin))
+        authError = null;
+        
+        if (string.IsNullOrWhiteSpace(battleIdInput) || !Guid.TryParse(battleIdInput, out var battleId))
         {
-            authError = "Please enter a Judge PIN";
+            authError = "Please enter a valid Battle ID";
             return;
         }
 
-        // Store PIN for API calls (in real app, validate via API)
-        isAuthenticated = true;
-        authError = null;
+        if (string.IsNullOrWhiteSpace(judgePin))
+        {
+            authError = "Please enter your Judge PIN";
+            return;
+        }
+
+        isAuthenticating = true;
+        
+        try
+        {
+            var client = ClientFactory.CreateClient();
+            client.BaseAddress = new Uri(Navigation.BaseUri);
+            
+            // First, load battle to get the event ID
+            var battleResponse = await client.GetAsync($"/battles/{battleId}");
+            
+            if (!battleResponse.IsSuccessStatusCode)
+            {
+                authError = "Battle not found. Please check the Battle ID.";
+                return;
+            }
+            
+            var battle = await battleResponse.Content.ReadFromJsonAsync<BattleDetailResponse>();
+            if (battle == null)
+            {
+                authError = "Failed to load battle details.";
+                return;
+            }
+            
+            eventIdForPin = battle.EventId;
+            currentBattle = battle;
+            
+            // Now validate the PIN using the dedicated validation endpoint
+            var testClient = ClientFactory.CreateClient();
+            testClient.BaseAddress = new Uri(Navigation.BaseUri);
+            testClient.DefaultRequestHeaders.Add("X-Pin", judgePin);
+            
+            // Call the PIN validation endpoint
+            var pinTestResponse = await testClient.PostAsync($"/scores/validate-pin?eventId={eventIdForPin}", null);
+            
+            // Check if authentication failed (401 = unauthorized/invalid PIN)
+            if (pinTestResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                authError = "Invalid Judge PIN. Please check your PIN and try again.";
+                eventIdForPin = null;
+                currentBattle = null;
+                return;
+            }
+            
+            if (!pinTestResponse.IsSuccessStatusCode)
+            {
+                authError = $"PIN validation failed: {pinTestResponse.StatusCode}";
+                eventIdForPin = null;
+                currentBattle = null;
+                return;
+            }
+            
+            // PIN is valid!
+            isAuthenticated = true;
+            authError = null;
+        }
+        catch (Exception ex)
+        {
+            authError = $"Authentication failed: {ex.Message}";
+            eventIdForPin = null;
+            currentBattle = null;
+        }
+        finally
+        {
+            isAuthenticating = false;
+        }
     }
 
     private async Task LoadBattle()
@@ -298,6 +385,11 @@
             var client = ClientFactory.CreateClient();
             client.BaseAddress = new Uri(Navigation.BaseUri);
             client.DefaultRequestHeaders.Add("X-Pin", judgePin);
+            
+            // Include eventId in query for PIN validation
+            var url = eventIdForPin.HasValue 
+                ? $"/scores?eventId={eventIdForPin.Value}" 
+                : "/scores";
 
             var requestDto = new
             {
@@ -307,7 +399,7 @@
                 breaker2Score = scoreModel.Breaker2Score
             };
 
-            var response = await client.PostAsJsonAsync("/scores", requestDto);
+            var response = await client.PostAsJsonAsync(url, requestDto);
 
             if (response.IsSuccessStatusCode)
             {

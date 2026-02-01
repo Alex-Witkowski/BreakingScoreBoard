@@ -32,6 +32,21 @@ public class ScoresController : ControllerBase
     }
 
     /// <summary>
+    /// Validates a judge PIN for an event.
+    /// </summary>
+    /// <param name="eventId">The event ID to validate the PIN against.</param>
+    /// <returns>Success if PIN is valid, 401 if invalid.</returns>
+    [HttpPost("validate-pin")]
+    [RequirePin]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public IActionResult ValidatePin([FromQuery] Guid eventId)
+    {
+        // If we get here, the PIN was valid (RequirePin filter passed)
+        return Ok(new { message = "PIN is valid", eventId });
+    }
+
+    /// <summary>
     /// Submits judge scores for a battle.
     /// </summary>
     /// <param name="request">The score submission request.</param>

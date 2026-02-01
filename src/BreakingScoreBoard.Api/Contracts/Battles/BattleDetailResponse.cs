@@ -19,6 +19,11 @@ public record BattleDetailResponse
     public required Guid CategoryId { get; init; }
 
     /// <summary>
+    /// Event ID.
+    /// </summary>
+    public required Guid EventId { get; init; }
+
+    /// <summary>
     /// Bracket level.
     /// </summary>
     public required BracketLevel BracketLevel { get; init; }

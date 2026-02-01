@@ -74,6 +74,7 @@ public class BattlesController : ControllerBase
             .Include(b => b.Breaker2)
             .Include(b => b.Winner)
             .Include(b => b.Scores)
+            .Include(b => b.Category)
             .AsNoTracking()
             .FirstOrDefaultAsync(b => b.Id == battleId);
 
@@ -100,6 +101,7 @@ public class BattlesController : ControllerBase
             .Include(b => b.Breaker2)
             .Include(b => b.Winner)
             .Include(b => b.Scores)
+            .Include(b => b.Category)
             .Where(b => b.CategoryId == categoryId && b.Status == BattleStatus.Scheduled)
             .OrderBy(b => b.ScheduledAt)
             .ThenBy(b => b.Id)
@@ -337,6 +339,7 @@ public class BattlesController : ControllerBase
         {
             Id = battle.Id,
             CategoryId = battle.CategoryId,
+            EventId = battle.Category.EventId,
             BracketLevel = battle.BracketLevel,
             BracketPosition = battle.BracketPosition,
             Breaker1Id = battle.Breaker1Id,
