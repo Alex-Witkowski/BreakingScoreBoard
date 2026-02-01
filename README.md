@@ -121,6 +121,8 @@ curl -H "X-Pin: your-judge-pin" -X POST http://localhost:5296/scores \
 
 **Note:** Use port `5296` for manual installation, `8080` for Docker deployment.
 
+**Note:** Use port `5296` for manual installation, `8080` for Docker deployment.
+
 ### Response Format
 
 All API responses follow a consistent format:
