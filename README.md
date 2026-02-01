@@ -10,14 +10,6 @@
 
 ---
 
-## 📖 Documentation
-
-- **[Installation Guide](INSTALL.md)** - Comprehensive setup instructions for Linux, macOS, and Windows
-- **[Quick Start](#quick-start)** - Get up and running in minutes
-- **[API Documentation](#api-documentation)** - RESTful API reference
-
----
-
 ## Features
 
 - **📅 Event Management**: Create and manage breaking battle events with multiple age categories
@@ -34,76 +26,30 @@
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
-
-The fastest way to get started. Requires only [Docker](https://www.docker.com/get-started) installed.
+### Docker (Recommended)
 
 ```bash
-# Clone the repository
-git clone https://github.com/Alex-Witkowski/BreakingScoreBoard.git
-cd BreakingScoreBoard
-<<<<<<< HEAD
-
-# Copy and configure environment variables
 cp .env.example .env
 # Edit .env and change POSTGRES_PASSWORD and ADMIN_PIN
-
-# Start the application and database
 docker compose up -d
-
-# View logs
-docker compose logs -f
 ```
 
-The application will be available at:
-- **Application**: `http://localhost:8080`
-- **Swagger UI**: `http://localhost:8080/swagger`
-- **Blazor Pages**:
-  - Organizer Dashboard: `http://localhost:8080/organizer/dashboard`
-  - Judge Scoring: `http://localhost:8080/judge/scoring`
-  - Spectator Scoreboard: `http://localhost:8080/spectator/scoreboard`
+Access at `http://localhost:8080` • Swagger UI at `/swagger`
 
-### Option 2: Manual Installation
-
-For development or when you prefer not to use Docker.
-
-**Prerequisites:**
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [PostgreSQL 15+](https://www.postgresql.org/download/)
-- IDE: Visual Studio 2022, VS Code with C# Dev Kit, or JetBrains Rider
-
-**Steps:**
+### Manual Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/Alex-Witkowski/BreakingScoreBoard.git
-cd BreakingScoreBoard
-=======
->>>>>>> 488a7f9
-
-# Restore dependencies
 dotnet restore
-
-# Update database connection string in appsettings.Development.json
-# Then run database migrations
 cd src/BreakingScoreBoard.Api
 dotnet ef database update
-
-# Start the application
 dotnet run
 ```
 
-<<<<<<< HEAD
-**For detailed installation instructions**, including platform-specific guides for Linux, macOS, and Windows, see [INSTALL.md](INSTALL.md).
-=======
 The application will be available at:
 - **Web Application**: `http://localhost:5296` (or `https://localhost:7197`)
 - **Swagger UI**: `http://localhost:5296/swagger`
-- **Blazor Pages**:
-  - Organizer Dashboard: `http://localhost:5296/organizer/dashboard`
-  - Judge Scoring: `http://localhost:5296/judge/scoring`
-  - Spectator Scoreboard: `http://localhost:5296/spectator/scoreboard`
->>>>>>> 488a7f9
+
+**📖 See [INSTALL.md](INSTALL.md) for complete installation instructions** including platform-specific setup for Linux, macOS, and Windows.
 
 ### Running Tests
 
@@ -318,81 +264,12 @@ dotnet ef database update PreviousMigrationName
 
 ## Deployment
 
-### Docker Compose (Recommended)
-
-The easiest way to deploy with a single command:
-
-```bash
-# Copy environment template
-cp .env.example .env
-
-<<<<<<< HEAD
-# Edit .env with production values (CHANGE passwords and PINs!)
-nano .env
-
-# Start services
-docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Stop services
-docker compose down
-=======
-# Run with PostgreSQL
-docker run -d \
-  -e ConnectionStrings__DefaultConnection="Host=db;..." \
-  -p 5296:8080 \
-  breakingscoreboard-api
->>>>>>> 488a7f9
-```
-
-**Important:** Always change default passwords and PINs before production deployment!
-
-### Docker (Manual)
-
-Build and run the Docker image manually:
-
-```bash
-# Build the image
-docker build -t breakingscoreboard .
-
-# Run PostgreSQL
-docker run -d \
-  --name breakingscoreboard-db \
-  -e POSTGRES_PASSWORD=your_password \
-  -e POSTGRES_DB=breakingscoreboard \
-  -p 5432:5432 \
-  postgres:16-alpine
-
-# Run the application
-docker run -d \
-  --name breakingscoreboard-app \
-  -e ConnectionStrings__DefaultConnection="Host=breakingscoreboard-db;Port=5432;Database=breakingscoreboard;Username=postgres;Password=your_password" \
-  -e AdminPin="your_admin_pin" \
-  -p 8080:8080 \
-  --link breakingscoreboard-db \
-  breakingscoreboard
-```
-
-### Cloud Deployment
-
-**Azure App Service:**
-```bash
-# Create resource group
-az group create --name breakingscoreboard --location eastus
-
-# Create PostgreSQL server
-az postgres flexible-server create \
-  --resource-group breakingscoreboard \
-  --name breakingscoreboard-db \
-  --database-name breakingscoreboard
-
-# Deploy from Docker image or GitHub
-az webapp up --name breakingscoreboard --runtime "DOTNETCORE:9.0"
-```
-
-**AWS, Google Cloud, or other platforms:** See [INSTALL.md](INSTALL.md) for detailed production deployment guides.
+Deploy with Docker Compose or to cloud platforms. See [INSTALL.md](INSTALL.md) for complete deployment instructions, including:
+- Docker deployment (single command with docker-compose)
+- Production security with Docker secrets
+- Cloud deployment (Azure, AWS, GCP)
+- Reverse proxy configuration
+- Database management
 
 **For complete installation and deployment instructions**, including platform-specific setup for Linux, macOS, Windows, and production best practices, see [INSTALL.md](INSTALL.md).
 
