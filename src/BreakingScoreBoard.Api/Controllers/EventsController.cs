@@ -258,6 +258,33 @@ public class EventsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Deletes an event.
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <returns>Success response.</returns>
+    [HttpDelete("{eventId:guid}")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteEvent(Guid eventId)
+    {
+        var battleEvent = await _dbContext.BattleEvents
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+
+        if (battleEvent is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Event not found"));
+        }
+
+        _dbContext.BattleEvents.Remove(battleEvent);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Deleted event {EventId} with title {Title}", eventId, battleEvent.Title);
+
+        return NoContent();
+    }
+
     private static EventResponse MapToResponse(BattleEvent battleEvent)
     {
         return new EventResponse
@@ -272,16 +299,22 @@ public class EventsController : ControllerBase
             UpdatedAt = battleEvent.UpdatedAt,
             Categories = battleEvent.Categories
                 .OrderBy(c => c.SortOrder)
-                .Select(c => new CategoryResponse
+                .Select(c =>
                 {
-                    Id = c.Id,
-                    EventId = c.EventId,
-                    Name = c.Name,
-                    MaxAge = c.MaxAge,
-                    BracketSize = c.BracketSize,
-                    CurrentPhase = c.CurrentPhase,
-                    SortOrder = c.SortOrder,
-                    RegistrationCount = c.Registrations.Count
+                    var registrationCount = c.Registrations.Count;
+                    return new CategoryResponse
+                    {
+                        Id = c.Id,
+                        EventId = c.EventId,
+                        Name = c.Name,
+                        MaxAge = c.MaxAge,
+                        MinBirthYear = c.MinBirthYear,
+                        MaxBirthYear = c.MaxBirthYear,
+                        BracketSize = AgeCategory.CalculateBracketSize(registrationCount),
+                        CurrentPhase = c.CurrentPhase,
+                        SortOrder = c.SortOrder,
+                        RegistrationCount = registrationCount
+                    };
                 })
                 .ToList()
         };

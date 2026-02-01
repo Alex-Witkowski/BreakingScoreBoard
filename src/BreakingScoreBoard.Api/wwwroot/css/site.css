@@ -1,4 +1,9 @@
-/* Urban Breakdance Theme */
+/* Urban Breakdance Theme - Global Design System */
+
+/* ====================== */
+/* 1. GLOBAL STYLES */
+/* ====================== */
+
 body {
     margin: 0;
     padding: 0;
@@ -7,6 +12,13 @@ body {
     background-attachment: fixed;
     min-height: 100vh;
     position: relative;
+    color: white;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 /* Grunge texture overlay */
@@ -24,29 +36,105 @@ body::before {
     opacity: 0.3;
 }
 
+/* ====================== */
+/* 2. LAYOUT COMPONENTS */
+/* ====================== */
+
 /* Override MudBlazor AppBar for dark theme */
 .mud-appbar {
     background: rgba(20, 20, 20, 0.95) !important;
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Main content container styling */
+/* Main content container - unified for all pages */
+.page-container,
 .dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px !important;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* Narrow container for forms */
+.page-container-narrow {
     max-width: 800px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 20px !important;
+    display: block;
+    box-sizing: border-box;
 }
 
-/* Form panel styling - semi-transparent dark background */
-.form-panel {
+/* Safari padding fallback */
+@supports (-webkit-touch-callout: none) {
+    .mud-main-content {
+        padding: 0 20px;
+        box-sizing: border-box;
+    }
+}
+
+/* ====================== */
+/* 3. PANEL/CARD STYLING */
+/* ====================== */
+
+/* Main panel styling - semi-transparent dark background with glassmorphism */
+.form-panel,
+.page-panel,
+.content-panel {
     background: rgba(30, 30, 35, 0.92) !important;
     backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1.5rem;
 }
 
-/* Header styling */
-.page-header {
+/* Card grid layout */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Info panel variant */
+.info-panel {
+    background: rgba(33, 150, 243, 0.1);
+    border-left: 3px solid #2196f3;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.success-panel {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 3px solid #4caf50;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.warning-panel {
+    background: rgba(255, 152, 0, 0.1);
+    border-left: 3px solid #ff9800;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.error-panel {
+    background: rgba(244, 67, 54, 0.1);
+    border-left: 3px solid #f44336;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+/* ====================== */
+/* 4. TYPOGRAPHY */
+/* ====================== */
+
+/* Page header/title */
+.page-header,
+.page-title {
     color: white;
     font-size: 2.5rem;
     font-weight: 300;
@@ -54,12 +142,37 @@ body::before {
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-/* Navigation tabs */
+.page-title-small {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Section headers */
+.section-header,
+.panel-header {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+}
+
+.subsection-header {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+/* ====================== */
+/* 5. NAVIGATION TABS */
+/* ====================== */
+
 .nav-tabs {
     display: flex;
     gap: 1rem;
     margin-bottom: 2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
 }
 
 .nav-tab {
@@ -71,6 +184,7 @@ body::before {
     font-size: 1.1rem;
     transition: all 0.3s;
     border-bottom: 2px solid transparent;
+    white-space: nowrap;
 }
 
 .nav-tab:hover {
@@ -83,15 +197,11 @@ body::before {
     border-bottom-color: #d32f2f;
 }
 
-/* Form section headers */
-.section-header {
-    color: white;
-    font-size: 1.25rem;
-    font-weight: 400;
-    margin-bottom: 1.5rem;
-}
+/* ====================== */
+/* 6. FORM & INPUT STYLING */
+/* ====================== */
 
-/* Override MudTextField for dark theme */
+/* MudTextField overrides */
 .mud-input-root {
     color: white !important;
 }
@@ -116,8 +226,19 @@ body::before {
     border-color: rgba(255, 255, 255, 0.7) !important;
 }
 
-/* Primary button styling - red accent */
-.submit-button {
+/* MudChip styling */
+.mud-chip {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+}
+
+/* ====================== */
+/* 7. BUTTON STYLING */
+/* ====================== */
+
+/* Primary button - red gradient accent */
+.submit-button,
+.btn-primary-gradient {
     background: linear-gradient(135deg, #c62828 0%, #8e0000 100%) !important;
     color: white !important;
     font-size: 1.1rem !important;
@@ -127,26 +248,34 @@ body::before {
     box-shadow: 0 4px 12px rgba(198, 40, 40, 0.4) !important;
 }
 
-.submit-button:hover {
+.submit-button:hover,
+.btn-primary-gradient:hover {
     background: linear-gradient(135deg, #d32f2f 0%, #a00000 100%) !important;
     box-shadow: 0 6px 16px rgba(198, 40, 40, 0.6) !important;
 }
 
+/* ====================== */
+/* 8. LIST/GRID ITEMS */
+/* ====================== */
+
 /* Event list styling */
-.event-list {
+.event-list,
+.items-list {
     background: rgba(20, 20, 25, 0.85);
     border-radius: 4px;
     margin-top: 2rem;
 }
 
-.event-list-header {
+.event-list-header,
+.items-list-header {
     color: white;
     font-size: 1.25rem;
     padding: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.event-item {
+.event-item,
+.list-item {
     color: white;
     padding: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -154,38 +283,44 @@ body::before {
     transition: background 0.2s;
 }
 
-.event-item:hover {
+.event-item:hover,
+.list-item:hover {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.event-item:last-child {
+.event-item:last-child,
+.list-item:last-child {
     border-bottom: none;
 }
 
-/* Empty state */
+/* ====================== */
+/* 9. EMPTY STATE */
+/* ====================== */
+
 .empty-state {
     text-align: center;
     padding: 3rem 1rem;
     color: rgba(255, 255, 255, 0.5);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .dashboard-container {
-        padding: 10px;
-    }
-    
-    .page-header {
-        font-size: 1.8rem;
-    }
-    
-    .nav-tabs {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-    }
+.loading-container {
+    text-align: center;
+    padding: 2rem;
 }
 
-/* MudSelect dropdown styling */
+.loading-text {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    opacity: 0.3;
+}
+
+/* ====================== */
+/* 10. MUD DROPDOWN & POPOVER */
+/* ====================== */
+
 .mud-popover-paper {
     background: rgba(30, 30, 35, 0.98) !important;
     backdrop-filter: blur(15px);
@@ -200,7 +335,10 @@ body::before {
     background: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Date picker styling */
+/* ====================== */
+/* 11. DATE/TIME PICKERS */
+/* ====================== */
+
 .mud-picker-calendar-header {
     color: white !important;
 }
@@ -212,3 +350,156 @@ body::before {
 .mud-picker-calendar-day:hover {
     background: rgba(255, 255, 255, 0.1) !important;
 }
+
+/* ====================== */
+/* 12. UTILITY CLASSES */
+/* ====================== */
+
+.mt-4 { margin-top: 1.5rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.my-4 { margin: 1.5rem 0; }
+
+.p-4 { padding: 1.5rem; }
+.pa-4 { padding: 1.5rem; }
+
+.has-divider {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.text-muted-light {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Form sizing helpers */
+.input-large .mud-input,
+.input-large input,
+.input-large textarea {
+    font-size: 1.1rem;
+}
+
+.select-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    color: #888;
+}
+
+.select-field {
+    width: 100%;
+    padding: 16.5px 14px;
+    font-size: 1.1rem;
+    border: 1px solid #444;
+    background: #1e1e23;
+    color: #fff;
+    border-radius: 4px;
+}
+
+/* Flex helpers */
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+
+.no-margin-top {
+    margin-top: 0;
+}
+
+/* Event list layout */
+.event-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.event-item-title {
+    flex: 1;
+    cursor: pointer;
+}
+
+.event-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Scoreboard layout */
+.battle-item {
+    padding: 1rem;
+    border-left: 3px solid #d32f2f;
+    margin-bottom: 1rem;
+}
+
+.battle-names {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.battle-name {
+    color: #64B5F6;
+    font-weight: 600;
+}
+
+.battle-divider {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 1rem 0;
+}
+
+.result-item {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.result-meta {
+    display: block;
+}
+
+.result-walkover {
+    margin-top: 0.5rem;
+    color: #ff9800;
+}
+
+/* ====================== */
+/* 13. RESPONSIVE */
+/* ====================== */
+
+@media (max-width: 768px) {
+    .page-container,
+    .dashboard-container,
+    .page-container-narrow {
+        padding: 10px;
+    }
+    
+    .page-header {
+        font-size: 1.8rem;
+    }
+    
+    .nav-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+

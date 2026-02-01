@@ -124,6 +124,50 @@ public abstract class ApiClientBase
     }
 
     /// <summary>
+    /// Execute PUT request and deserialize response
+    /// </summary>
+    protected async Task<TResponse> PutAsync<TRequest, TResponse>(
+        string url, 
+        TRequest request, 
+        string? pin = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var httpRequest = new HttpRequestMessage(HttpMethod.Put, url)
+            {
+                Content = JsonContent.Create(request)
+            };
+
+            if (!string.IsNullOrEmpty(pin))
+            {
+                httpRequest.Headers.Add("X-Pin", pin);
+            }
+
+            var response = await _httpClient.SendAsync(httpRequest, ct);
+            await EnsureSuccessWithErrorDetails(response);
+            
+            var result = await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: ct);
+            if (result == null)
+            {
+                throw new InvalidOperationException($"Failed to deserialize response from {url}");
+            }
+            
+            return result;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request failed for PUT {Url}", url);
+            throw new InvalidOperationException($"Failed to connect to API: {ex.Message}", ex);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize response from PUT {Url}", url);
+            throw new InvalidOperationException($"Invalid response from API", ex);
+        }
+    }
+
+    /// <summary>
     /// Execute PATCH request and deserialize response
     /// </summary>
     protected async Task<TResponse> PatchAsync<TRequest, TResponse>(
@@ -164,6 +208,33 @@ public abstract class ApiClientBase
         {
             _logger.LogError(ex, "Failed to deserialize response from PATCH {Url}", url);
             throw new InvalidOperationException($"Invalid response from API", ex);
+        }
+    }
+
+    /// <summary>
+    /// Execute DELETE request
+    /// </summary>
+    protected async Task DeleteAsync(
+        string url,
+        string? pin = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var httpRequest = new HttpRequestMessage(HttpMethod.Delete, url);
+
+            if (!string.IsNullOrEmpty(pin))
+            {
+                httpRequest.Headers.Add("X-Pin", pin);
+            }
+
+            var response = await _httpClient.SendAsync(httpRequest, ct);
+            await EnsureSuccessWithErrorDetails(response);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request failed for DELETE {Url}", url);
+            throw new InvalidOperationException($"Failed to connect to API: {ex.Message}", ex);
         }
     }
 

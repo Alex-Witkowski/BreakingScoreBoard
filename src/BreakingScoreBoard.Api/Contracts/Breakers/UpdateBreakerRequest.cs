@@ -1,9 +1,9 @@
-namespace BreakingScoreBoard.Api.Contracts.Registrations;
+namespace BreakingScoreBoard.Api.Contracts.Breakers;
 
 /// <summary>
-/// Request to register a breaker for an event category.
+/// Request to update a breaker's information.
 /// </summary>
-public sealed record RegisterBreakerRequest
+public sealed record UpdateBreakerRequest
 {
     /// <summary>
     /// Breaker's legal name.

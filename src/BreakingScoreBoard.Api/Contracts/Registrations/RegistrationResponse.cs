@@ -18,9 +18,24 @@ public sealed record RegistrationResponse
     public required Guid BreakerId { get; init; }
 
     /// <summary>
-    /// Breaker's name.
+    /// Breaker's legal name.
     /// </summary>
     public required string BreakerName { get; init; }
+
+    /// <summary>
+    /// Breaker's battle name (display name for competition).
+    /// </summary>
+    public required string BattleName { get; init; }
+
+    /// <summary>
+    /// Category ID the breaker is registered in.
+    /// </summary>
+    public required Guid CategoryId { get; init; }
+
+    /// <summary>
+    /// Category name the breaker is registered in.
+    /// </summary>
+    public required string CategoryName { get; init; }
 
     /// <summary>
     /// Calculated age at event date.

@@ -1,0 +1,641 @@
+@page "/events/{EventId:guid}/register"
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Services
+@using BreakingScoreBoard.Api.Contracts.Events
+@using BreakingScoreBoard.Api.Contracts.Registrations
+@using BreakingScoreBoard.Api.Contracts.Breakers
+@using BreakingScoreBoard.Domain.Enums
+@using BreakingScoreBoard.Domain.Entities
+@inject EventsApiClient EventsApi
+@inject RegistrationsApiClient RegistrationsApi
+@inject BreakersApiClient BreakersApi
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Register Dancers</PageTitle>
+
+<PageContainer>
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/organizer/dashboard")'>Dashboard</button>
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo($"/events/detail/{EventId}")'>Event Details</button>
+        <button class="nav-tab active">Register Dancers</button>
+    </div>
+
+    @if (isLoading)
+    {
+        <MudPaper Class="form-panel pa-6">
+            <div class="loading-container">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Class="mt-4 loading-text">Loading event details...</MudText>
+            </div>
+        </MudPaper>
+    }
+    else if (eventData == null)
+    {
+        <MudPaper Class="form-panel pa-6">
+            <div class="empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Class="empty-icon" />
+                <MudText Typo="Typo.h5" Class="mt-4">Event not found</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4" OnClick='() => Navigation.NavigateTo("/organizer/dashboard")'>
+                    Back to Dashboard
+                </MudButton>
+            </div>
+        </MudPaper>
+    }
+    else
+    {
+        <!-- PIN Entry (if not already provided) -->
+        @if (string.IsNullOrEmpty(adminPin) && !pinVerified)
+        {
+            <MudPaper Class="form-panel pa-6 mb-4">
+                <MudText Typo="Typo.h5" Style="color: white; font-weight: 300; margin-bottom: 1.5rem;">
+                    Admin PIN Required
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: rgba(255, 255, 255, 0.7); margin-bottom: 1rem;">
+                    Please enter your admin PIN to register dancers for this event.
+                </MudText>
+                
+                <div style="max-width: 300px;">
+                    <MudTextField @bind-Value="pinInput"
+                                  Label="Admin PIN"
+                                  InputType="InputType.Password"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true"
+                                  Class="mb-3"
+                                  Disabled="@pinValidating"
+                                  Style="font-size: 1.1rem;" />
+                    
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               OnClick="@VerifyPin"
+                               Disabled="@(pinValidating || string.IsNullOrWhiteSpace(pinInput))">
+                        @if (pinValidating)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Verifying...</span>
+                        }
+                        else
+                        {
+                            <span>Verify PIN</span>
+                        }
+                    </MudButton>
+                </div>
+                
+                @if (pinError)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-3">
+                        Invalid PIN. Please try again.
+                    </MudAlert>
+                }
+            </MudPaper>
+        }
+
+        <!-- Registration Form -->
+        @if (pinVerified || !string.IsNullOrEmpty(adminPin))
+        {
+            <MudPaper Class="form-panel pa-6 mb-4">
+                <MudText Typo="Typo.h5" Style="color: white; font-weight: 300; margin-bottom: 1.5rem;">
+                    @eventData.Title - @(isEditing ? "Edit Dancer" : "Register Dancer")
+                </MudText>
+
+                @if (isEditing)
+                {
+                    <MudAlert Severity="Severity.Info" Class="mb-4">
+                        <strong>Editing Mode:</strong> You are currently editing an existing dancer. Update the information below and click "Update Dancer" to save changes.
+                    </MudAlert>
+                }
+
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="formModel.Name"
+                                      Label="Legal Name"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Placeholder="e.g., John Doe"
+                                      Required="true"
+                                      Disabled="@isSubmitting"
+                                      Style="font-size: 1.1rem;" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="formModel.BattleName"
+                                      Label="Battle Name"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Placeholder="e.g., B-Boy Thunder"
+                                      Required="true"
+                                      Disabled="@isSubmitting"
+                                      HelperText="Stage name for competition"
+                                      Style="font-size: 1.1rem;" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker Date="@birthDateValue"
+                                       DateChanged="@OnBirthDateChanged"
+                                       Label="Date of Birth"
+                                       Variant="Variant.Outlined"
+                                       Required="true"
+                                       Editable="true"
+                                       DateFormat="dd.MM.yyyy"
+                                       Disabled="@isSubmitting"
+                                       MaxDate="@DateTime.UtcNow"
+                                       Style="font-size: 1.1rem;" />
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <div style="padding-top: 0.8rem;">
+                            @if (birthDateValue.HasValue && eventData != null)
+                            {
+                                var birthDate = DateOnly.FromDateTime(birthDateValue.Value);
+                                var age = birthDate.GetAgeAtDate(eventData.EventDate);
+                                <MudText Typo="Typo.body2" Style="color: rgba(255, 255, 255, 0.7);">
+                                    Age: <strong>@age years</strong>
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Style="color: rgba(255, 255, 255, 0.5); font-style: italic;">
+                                    Select birth date to see age
+                                </MudText>
+                            }
+                        </div>
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Eligible Categories -->
+                @if (isEditing)
+                {
+                    <!-- In edit mode, show current category (read-only) -->
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255, 152, 0, 0.1); border-left: 3px solid #FF9800; border-radius: 4px;">
+                        <MudText Typo="Typo.subtitle2" Style="color: #FFB74D; margin-bottom: 0.5rem;">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1" />
+                            Current Category
+                        </MudText>
+                        <MudText Typo="Typo.body2" Style="color: white;">
+                            @(eligibleCategories.FirstOrDefault(c => c.Id == selectedCategoryId)?.Name ?? "Unknown")
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.6); margin-top: 0.25rem;">
+                            Category cannot be changed when editing
+                        </MudText>
+                    </div>
+                }
+                else if (birthDateValue.HasValue && eligibleCategories.Any())
+                {
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(56, 142, 60, 0.1); border-left: 3px solid #388E3C; border-radius: 4px;">
+                        <MudText Typo="Typo.subtitle2" Style="color: #81C784; margin-bottom: 0.75rem;">
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="mr-1" />
+                            Eligible Categories
+                        </MudText>
+                        
+                        @foreach (var category in eligibleCategories)
+                        {
+                            var isSelected = category.Id == selectedCategoryId;
+                            var birthDateRange = GetBirthDateRangeText(category);
+                            <div style="display: flex; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 4px; cursor: pointer;" @onclick="@(() => selectedCategoryId = category.Id)">
+                                <input type="radio" id="cat_@category.Id" name="category" checked="@isSelected" style="cursor: pointer;" />
+                                <div style="flex: 1; margin-left: 1rem;">
+                                    <MudText Typo="Typo.body2" Style="color: white;">
+                                        @category.Name
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.6);">
+                                        @birthDateRange
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                        Auto Bracket: @category.BracketSize | Registered: @category.RegistrationCount/@category.BracketSize
+                                    </MudText>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (birthDateValue.HasValue)
+                {
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(211, 47, 47, 0.1); border-left: 3px solid #D32F2F; border-radius: 4px;">
+                        <MudText Typo="Typo.body2" Style="color: #E57373;">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
+                            No eligible categories for this birth date
+                        </MudText>
+                    </div>
+                }
+
+                <!-- Submit Button -->
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                    <MudButton Variant="Variant.Filled"
+                           Color="@(isEditing ? Color.Warning : Color.Success)"
+                           OnClick="@SubmitRegistration"
+                           Disabled="@(!CanSubmit() || isSubmitting)"
+                           StartIcon="@(isEditing ? Icons.Material.Filled.Save : Icons.Material.Filled.PersonAdd)">
+                    @if (isSubmitting)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>@(isEditing ? "Updating..." : "Registering...")</span>
+                    }
+                    else
+                    {
+                        <span>@(isEditing ? "Update Dancer" : "Register Dancer")</span>
+                    }
+                </MudButton>
+
+                @if (isEditing)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick="@CancelEdit"
+                               Disabled="@isSubmitting"
+                               StartIcon="@Icons.Material.Filled.Cancel">
+                        Cancel Edit
+                    </MudButton>
+                }
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick='() => Navigation.NavigateTo($"/events/detail/{EventId}")'
+                               Disabled="@isSubmitting">
+                        Back to Event Details
+                    </MudButton>
+                </div>
+            </MudPaper>
+
+            <!-- Registered Dancers List -->
+            @if (registeredDancers.Any())
+            {
+                <MudPaper Class="form-panel pa-6">
+                    <MudText Typo="Typo.h5" Style="color: white; font-weight: 300; margin-bottom: 1.5rem;">
+                        Registered Dancers (@registeredDancers.Count)
+                    </MudText>
+
+                    <MudTable Items="@registeredDancers" Striped="true" Style="background: transparent;">
+                        <HeaderContent>
+                            <MudTh>Legal Name</MudTh>
+                            <MudTh>Battle Name</MudTh>
+                            <MudTh>Category</MudTh>
+                            <MudTh>Age</MudTh>
+                            <MudTh>Registered</MudTh>
+                            <MudTh Style="text-align: right;">Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Legal Name" Style="color: white;">@context.BreakerName</MudTd>
+                            <MudTd DataLabel="Battle Name" Style="color: white;">@context.BattleName</MudTd>
+                            <MudTd DataLabel="Category" Style="color: white;">@context.CategoryName</MudTd>
+                            <MudTd DataLabel="Age" Style="color: white;">@context.Age</MudTd>
+                            <MudTd DataLabel="Registered" Style="color: rgba(255, 255, 255, 0.7);">
+                                @context.RegisteredAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                            </MudTd>
+                            <MudTd DataLabel="Actions" Style="text-align: right;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                             Size="Size.Small" 
+                                             Color="Color.Primary"
+                                             OnClick="@(() => EditDancer(context))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                             Size="Size.Small" 
+                                             Color="Color.Error"
+                                             OnClick="@(() => DeleteDancer(context))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudPaper>
+            }
+        }
+    }
+</PageContainer>
+
+@code {
+    [Parameter]
+    public Guid EventId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? AdminPinQuery { get; set; }
+
+    private EventResponse? eventData;
+    private bool isLoading = true;
+    private string? adminPin;
+    private string pinInput = string.Empty;
+    private bool pinVerified = false;
+    private bool pinValidating = false;
+    private bool pinError = false;
+    private bool isSubmitting = false;
+
+    private RegistrationFormModel formModel = new();
+    private List<RegistrationResponse> registeredDancers = new();
+    private List<CategoryResponse> eligibleCategories = new();
+    private Guid selectedCategoryId = Guid.Empty;
+    private DateTime? birthDateValue;
+    private Guid? editingBreakerId = null;
+    private bool isEditing => editingBreakerId.HasValue;
+
+    private class RegistrationFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string BattleName { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if PIN is provided via query parameter
+        if (!string.IsNullOrEmpty(AdminPinQuery))
+        {
+            adminPin = AdminPinQuery;
+            pinVerified = true;
+        }
+
+        await LoadEventData();
+        await LoadRegisteredDancers();
+    }
+
+    private async Task LoadEventData()
+    {
+        try
+        {
+            isLoading = true;
+            eventData = await EventsApi.GetEventByIdAsync(EventId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load event: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadRegisteredDancers()
+    {
+        try
+        {
+            registeredDancers = await RegistrationsApi.GetRegistrationsForEventAsync(EventId);
+        }
+        catch
+        {
+            // Silently fail if endpoint doesn't exist yet
+            registeredDancers = new();
+        }
+    }
+
+    private async Task VerifyPin()
+    {
+        if (string.IsNullOrWhiteSpace(pinInput))
+        {
+            return;
+        }
+
+        try
+        {
+            pinValidating = true;
+            pinError = false;
+
+            // Try to verify by attempting to access event data with PIN
+            // For now, we'll just store it. In a real app, you'd validate it here.
+            adminPin = pinInput;
+            pinVerified = true;
+            pinInput = string.Empty;
+        }
+        catch
+        {
+            pinError = true;
+        }
+        finally
+        {
+            pinValidating = false;
+        }
+    }
+
+    private void UpdateEligibleCategories()
+    {
+        eligibleCategories.Clear();
+        selectedCategoryId = Guid.Empty;
+
+        if (eventData == null || !birthDateValue.HasValue)
+        {
+            return;
+        }
+
+        var birthDate = DateOnly.FromDateTime(birthDateValue.Value);
+        var age = birthDate.GetAgeAtDate(eventData.EventDate);
+        var birthYear = birthDate.Year;
+
+        foreach (var category in eventData.Categories.Where(c => c.CurrentPhase == CategoryPhase.Registration))
+        {
+            bool ageMatches = !category.MaxAge.HasValue || age <= category.MaxAge.Value;
+            bool birthYearMatches = (!category.MinBirthYear.HasValue || birthYear >= category.MinBirthYear.Value) &&
+                                   (!category.MaxBirthYear.HasValue || birthYear <= category.MaxBirthYear.Value);
+
+            if (ageMatches && birthYearMatches)
+            {
+                eligibleCategories.Add(category);
+                
+                // Auto-select if only one category matches
+                if (eligibleCategories.Count == 1)
+                {
+                    selectedCategoryId = category.Id;
+                }
+            }
+        }
+    }
+
+    private void OnBirthDateChanged(DateTime? newDate)
+    {
+        birthDateValue = newDate;
+        UpdateEligibleCategories();
+    }
+
+    private string GetBirthDateRangeText(CategoryResponse category)
+    {
+        if (eventData == null)
+        {
+            return string.Empty;
+        }
+
+        // If using birth year restrictions
+        if (category.MinBirthYear.HasValue || category.MaxBirthYear.HasValue)
+        {
+            var minYear = category.MinBirthYear?.ToString() ?? "–";
+            var maxYear = category.MaxBirthYear?.ToString() ?? "–";
+            return $"Born: {minYear} to {maxYear}";
+        }
+
+        // If using age restrictions
+        if (category.MaxAge.HasValue)
+        {
+            // Calculate birth date range based on max age
+            // To be maxAge or younger at event date, must be born on or after:
+            var oldestBirthDate = eventData.EventDate.AddYears(-category.MaxAge.Value - 1).AddDays(1);
+            
+            // Youngest would be born on event date (age 0)
+            var youngestBirthDate = eventData.EventDate;
+            
+            return $"Born: {oldestBirthDate:dd.MM.yyyy} to {youngestBirthDate:dd.MM.yyyy}";
+        }
+
+        return "All ages";
+    }
+
+    private bool CanSubmit()
+    {
+        return !string.IsNullOrWhiteSpace(formModel.Name) &&
+               !string.IsNullOrWhiteSpace(formModel.BattleName) &&
+               birthDateValue.HasValue &&
+               selectedCategoryId != Guid.Empty;
+    }
+
+    private async Task SubmitRegistration()
+    {
+        if (!CanSubmit() || string.IsNullOrEmpty(adminPin) || !birthDateValue.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+
+            if (isEditing && editingBreakerId.HasValue)
+            {
+                // Update existing dancer
+                await UpdateDancer();
+            }
+            else
+            {
+                // Register new dancer
+                var request = new RegisterBreakerRequest
+                {
+                    Name = formModel.Name,
+                    BattleName = formModel.BattleName,
+                    BirthDate = DateOnly.FromDateTime(birthDateValue.Value)
+                };
+
+                var response = await RegistrationsApi.RegisterBreakerAsync(
+                    EventId,
+                    selectedCategoryId,
+                    request,
+                    adminPin);
+
+                Snackbar.Add($"Registered {formModel.BattleName} successfully!", Severity.Success);
+            }
+
+            // Reset form
+            ClearForm();
+
+            // Refresh registered dancers list
+            await LoadRegisteredDancers();
+        }
+        catch (Exception ex)
+        {
+            var action = isEditing ? "Update" : "Registration";
+            Snackbar.Add($"{action} failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void EditDancer(RegistrationResponse dancer)
+    {
+        // Will load full breaker details asynchronously
+        _ = EditDancerAsync(dancer);
+    }
+
+    private async Task EditDancerAsync(RegistrationResponse dancer)
+    {
+        try
+        {
+            // Get full breaker details including birth date
+            var breakerDetails = await BreakersApi.GetBreakerAsync(dancer.BreakerId);
+            
+            editingBreakerId = dancer.BreakerId;
+            selectedCategoryId = dancer.CategoryId;
+            formModel.Name = breakerDetails.Name;
+            formModel.BattleName = breakerDetails.BattleName;
+            birthDateValue = breakerDetails.BirthDate.ToDateTime(TimeOnly.MinValue);
+            
+            UpdateEligibleCategories();
+            
+            // Force UI re-render since this is called asynchronously
+            StateHasChanged();
+            
+            Snackbar.Add($"Editing {breakerDetails.BattleName}", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load dancer details: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void CancelEdit()
+    {
+        ClearForm();
+        Snackbar.Add("Edit cancelled", Severity.Normal);
+    }
+
+    private async Task DeleteDancer(RegistrationResponse dancer)
+    {
+        if (string.IsNullOrEmpty(adminPin))
+        {
+            Snackbar.Add("Admin PIN required to delete dancers", Severity.Warning);
+            return;
+        }
+
+        bool? confirmed = await DialogService.ShowMessageBox(
+            "Delete Dancer",
+            $"Are you sure you want to remove {dancer.BattleName} ({dancer.BreakerName}) from {dancer.CategoryName}?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        try
+        {
+            await RegistrationsApi.DeleteRegistrationAsync(
+                EventId,
+                dancer.Id,
+                adminPin);
+
+            Snackbar.Add($"Removed {dancer.BattleName} from event", Severity.Success);
+
+            // Refresh the registered dancers list
+            await LoadRegisteredDancers();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to delete: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void ClearForm()
+    {
+        formModel = new();
+        birthDateValue = null;
+        eligibleCategories.Clear();
+        selectedCategoryId = Guid.Empty;
+        editingBreakerId = null;
+    }
+
+    private async Task UpdateDancer()
+    {
+        if (!editingBreakerId.HasValue || string.IsNullOrEmpty(adminPin) || !birthDateValue.HasValue)
+        {
+            return;
+        }
+
+        // Update breaker information only (category cannot be changed)
+        var updateRequest = new UpdateBreakerRequest
+        {
+            Name = formModel.Name,
+            BattleName = formModel.BattleName,
+            BirthDate = DateOnly.FromDateTime(birthDateValue.Value)
+        };
+
+        await BreakersApi.UpdateBreakerAsync(
+            editingBreakerId.Value,
+            updateRequest,
+            adminPin);
+
+        Snackbar.Add($"Updated {formModel.BattleName} successfully!", Severity.Success);
+    }
+}

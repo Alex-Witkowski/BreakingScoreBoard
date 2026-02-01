@@ -3,6 +3,7 @@ using System;
 using BreakingScoreBoard.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BreakingScoreBoard.Api.Migrations
 {
     [DbContext(typeof(BattleDbContext))]
-    partial class BattleDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260131161409_AddBirthYearFieldsToCategory")]
+    partial class AddBirthYearFieldsToCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -180,10 +183,6 @@ namespace BreakingScoreBoard.Api.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()

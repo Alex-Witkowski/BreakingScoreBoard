@@ -1,0 +1,725 @@
+@page "/events/detail/{EventId:guid}"
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Services
+@using BreakingScoreBoard.Api.Contracts.Events
+@using BreakingScoreBoard.Api.Contracts.Battles
+@using BreakingScoreBoard.Domain.Enums
+@inject EventsApiClient EventsApi
+@inject CategoriesApiClient CategoriesApi
+@inject BattlesApiClient BattlesApi
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>@(eventData?.Title ?? "Event Details")</PageTitle>
+
+<PageContainer>
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="nav-tab" @onclick='() => Navigation.NavigateTo("/organizer/dashboard")'>Dashboard</button>
+        <button class="nav-tab active">Event Details</button>
+        @if (eventData != null)
+        {
+            <button class="nav-tab" @onclick='() => Navigation.NavigateTo($"/judge/scoring?eventId={eventData.Id}")'>Judge Scoring</button>
+            <button class="nav-tab" @onclick='() => Navigation.NavigateTo($"/spectator/scoreboard?eventId={eventData.Id}")'>Spectator</button>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <MudPaper Class="form-panel pa-6">
+            <div class="loading-container">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Class="mt-4 loading-text">Loading event details...</MudText>
+            </div>
+        </MudPaper>
+    }
+    else if (eventData == null)
+    {
+        <MudPaper Class="form-panel pa-6">
+            <div class="empty-state">
+                <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Class="empty-icon" />
+                <MudText Typo="Typo.h5" Class="mt-4">Event not found</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4" OnClick='() => Navigation.NavigateTo("/organizer/dashboard")'>
+                    Back to Dashboard
+                </MudButton>
+            </div>
+        </MudPaper>
+    }
+    else
+    {
+        <!-- Event Information -->
+        <MudPaper Class="form-panel pa-6 mb-4">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <MudText Typo="Typo.h4" Style="color: white; font-weight: 300;">
+                    @eventData.Title
+                </MudText>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.Edit"
+                           OnClick="@OpenEditDialog">
+                    Edit Event
+                </MudButton>
+            </div>
+            
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Event Date</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.EventDate.ToString("dd.MM.yyyy")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Location</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@(eventData.Location ?? "Not specified")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div style="flex-grow: 1;">
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Number of Judges</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.JudgeCount Judges</MudText>
+                        </div>
+                        <MudTooltip Text="Judge count cannot be changed after event creation">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="color: rgba(255, 255, 255, 0.3);" />
+                        </MudTooltip>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@(eventData.RegistrationOpen ? Icons.Material.Filled.LockOpen : Icons.Material.Filled.Lock)" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Registration Status</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">
+                                @(eventData.RegistrationOpen ? "Open" : "Closed")
+                            </MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.AddCircle" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Created</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <MudIcon Icon="@Icons.Material.Filled.Update" Size="Size.Medium" Style="color: #d32f2f; margin-right: 1rem;" />
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Last Updated</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white; font-size: 1.1rem;">@eventData.UpdatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</MudText>
+                        </div>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- PIN Management -->
+        <MudPaper Class="form-panel pa-6 mb-4">
+            <MudText Typo="Typo.h5" Style="color: white; font-weight: 300; margin-bottom: 1.5rem;">
+                Security & Access
+            </MudText>
+            
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="6">
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1rem; border-left: 3px solid #d32f2f;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">Judge PIN</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    Used by judges to access scoring interface
+                                </MudText>
+                            </div>
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Warning" 
+                                       Size="Size.Small"
+                                       OnClick="@OpenRegenerateJudgePinDialog"
+                                       StartIcon="@Icons.Material.Filled.Sync">
+                                Regenerate
+                            </MudButton>
+                        </div>
+                    </div>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1rem; border-left: 3px solid #d32f2f;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="flex-grow: 1;">
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">Admin PIN</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    Used for event management and configuration
+                                </MudText>
+                            </div>
+                            <MudTooltip Text="Admin PIN cannot be changed for security reasons">
+                                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="color: rgba(255, 255, 255, 0.3);" />
+                            </MudTooltip>
+                        </div>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Age Categories -->
+        <MudPaper Class="form-panel pa-6">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <MudText Typo="Typo.h5" Style="color: white; font-weight: 300;">Age Categories</MudText>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    @if (eventData.Categories.Any())
+                    {
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">@eventData.Categories.Count Categories</MudChip>
+                    }
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="@OpenCreateCategoryDialog">
+                        Add Category
+                    </MudButton>
+                </div>
+            </div>
+            
+            @if (eventData.Categories.Any())
+            {
+                @foreach (var category in eventData.Categories.OrderBy(c => c.SortOrder))
+                {
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1rem; margin-bottom: 0.75rem; border-left: 3px solid #d32f2f;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">@category.Name</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    @if (category.MinBirthYear.HasValue || category.MaxBirthYear.HasValue)
+                                    {
+                                        <span>Born: @GetBirthYearRangeText(category.MinBirthYear, category.MaxBirthYear)</span>
+                                    }
+                                    else if (category.MaxAge.HasValue)
+                                    {
+                                        <span>Age limit: @category.MaxAge years</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Open category (no age limit)</span>
+                                    }
+                                </MudText>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <div style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Auto Bracket</MudText>
+                                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">@category.BracketSize</MudText>
+                                </div>
+                                
+                                <div style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Registered</MudText>
+                                    <MudText Typo="Typo.body1" Style="color: white; font-weight: 500;">@category.RegistrationCount</MudText>
+                                </div>
+                                
+                                <div style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Phase</MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="@GetPhaseColor(category.CurrentPhase)">
+                                        @category.CurrentPhase.ToString()
+                                    </MudChip>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem;">
+                                    @if (category.CurrentPhase == CategoryPhase.Registration)
+                                    {
+                                        <MudButton Variant="Variant.Filled" 
+                                                   Color="Color.Success" 
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => StartCategoryBracket(category))"
+                                                   StartIcon="@Icons.Material.Filled.PlayArrow">
+                                            Start
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Variant="Variant.Outlined" 
+                                                   Color="Color.Warning" 
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => ResetCategory(category))"
+                                                   StartIcon="@Icons.Material.Filled.RestartAlt">
+                                            Reset
+                                        </MudButton>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state" style="padding: 2rem 1rem;">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Large" Style="font-size: 3rem; opacity: 0.3;" />
+                    <MudText Typo="Typo.body1" Class="mt-2">No age categories created yet</MudText>
+                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Click "Add Category" to create your first category</MudText>
+                </div>
+            }
+        </MudPaper>
+        
+        <!-- Active Category Battle Management -->
+        @if (eventData.Categories.Any(c => c.CurrentPhase == CategoryPhase.PreSelection || c.CurrentPhase == CategoryPhase.Bracket))
+        {
+            <MudPaper Class="form-panel pa-6 mb-4">
+                <MudText Typo="Typo.h5" Style="color: white; font-weight: 300; margin-bottom: 1.5rem;">
+                    Battle Management
+                </MudText>
+                
+                <!-- Active Category Selector -->
+                <MudSelect T="Guid?" 
+                           Value="@activeCategoryId"
+                           ValueChanged="@OnActiveCategoryChanged"
+                           Label="Active Category" 
+                           Variant="Variant.Outlined"
+                           Class="mb-4"
+                           AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem T="Guid?" Value="null">Select a category...</MudSelectItem>
+                    @foreach (var category in eventData.Categories.Where(c => c.CurrentPhase == CategoryPhase.PreSelection || c.CurrentPhase == CategoryPhase.Bracket))
+                    {
+                        <MudSelectItem T="Guid?" Value="@category.Id">
+                            @category.Name (@category.CurrentPhase)
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+                
+                <!-- Next Battle Panel -->
+                @if (activeCategoryId.HasValue && nextBattle != null)
+                {
+                    <div style="background: rgba(20, 20, 25, 0.6); border-radius: 4px; padding: 1.5rem; border-left: 3px solid #4caf50;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                            <div>
+                                <MudText Typo="Typo.h6" Style="color: white; margin-bottom: 0.25rem;">Next Battle</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">
+                                    @nextBattle.BracketLevel - Battle #@nextBattle.BracketPosition
+                                </MudText>
+                            </div>
+                            <MudChip T="string" Size="Size.Small" Color="@GetBattleStatusColor(nextBattle.Status)">
+                                @nextBattle.Status
+                            </MudChip>
+                        </div>
+                        
+                        <MudGrid Spacing="2" Class="mb-4">
+                            <MudItem xs="12" md="5">
+                                <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 4px;">
+                                    <MudText Typo="Typo.h6" Style="color: white;">@nextBattle.Breaker1Name</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Breaker 1</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="2" Style="display: flex; align-items: center; justify-content: center;">
+                                <MudText Typo="Typo.h5" Style="color: #d32f2f; font-weight: bold;">VS</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="5">
+                                <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 4px;">
+                                    <MudText Typo="Typo.h6" Style="color: white;">@nextBattle.Breaker2Name</MudText>
+                                    <MudText Typo="Typo.caption" Style="color: rgba(255, 255, 255, 0.5);">Breaker 2</MudText>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                        
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       Href="@($"/judge/scoring?eventId={eventData.Id}&battleId={nextBattle.Id}")"
+                                       StartIcon="@Icons.Material.Filled.Score">
+                                Go to Scoring
+                            </MudButton>
+                        </div>
+                    </div>
+                }
+                else if (activeCategoryId.HasValue && nextBattle == null && !isLoadingNextBattle)
+                {
+                    <MudAlert Severity="Severity.Info">
+                        No scheduled battles found for this category. All battles may be complete!
+                    </MudAlert>
+                }
+                else if (activeCategoryId.HasValue && isLoadingNextBattle)
+                {
+                    <div style="text-align: center; padding: 2rem;">
+                        <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary" />
+                    </div>
+                }
+            </MudPaper>
+        }
+        
+        <!-- Action Buttons -->
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <MudButton Variant="Variant.Outlined" 
+                       Color="Color.Default" 
+                       OnClick='() => Navigation.NavigateTo("/organizer/dashboard")'
+                       StartIcon="@Icons.Material.Filled.ArrowBack">
+                Back to Dashboard
+            </MudButton>
+            
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick='() => Navigation.NavigateTo($"/events/{eventData.Id}/register")'
+                       StartIcon="@Icons.Material.Filled.PersonAdd">
+                Register Dancers
+            </MudButton>
+            
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Info" 
+                       OnClick='() => Navigation.NavigateTo($"/spectator/scoreboard?eventId={eventData.Id}")'
+                       StartIcon="@Icons.Material.Filled.Tv">
+                View Scoreboard
+            </MudButton>
+            
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Success" 
+                       OnClick='() => Navigation.NavigateTo($"/judge/scoring?eventId={eventData.Id}")'
+                       StartIcon="@Icons.Material.Filled.Star">
+                Judge Scoring
+            </MudButton>
+        </div>
+    }
+</PageContainer>
+
+@code {
+    [Parameter]
+    public Guid EventId { get; set; }
+    
+    private EventResponse? eventData;
+    private bool isLoading = true;
+    
+    private Guid? activeCategoryId;
+    private BattleDetailResponse? nextBattle;
+    private bool isLoadingNextBattle;
+    
+    // Edit form models
+    private class EditEventModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public DateOnly EventDate { get; set; }
+        public string? Location { get; set; }
+        public string AdminPin { get; set; } = string.Empty;
+    }
+    
+    private class RegenerateJudgePinModel
+    {
+        public string AdminPin { get; set; } = string.Empty;
+        public string NewJudgePin { get; set; } = string.Empty;
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventData();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && activeCategoryId.HasValue)
+        {
+            await LoadNextBattle();
+        }
+    }
+    
+    private async Task OnActiveCategoryChanged(Guid? categoryId)
+    {
+        activeCategoryId = categoryId;
+        nextBattle = null;
+        
+        if (categoryId.HasValue)
+        {
+            await LoadNextBattle();
+        }
+    }
+    
+    private async Task LoadNextBattle()
+    {
+        if (!activeCategoryId.HasValue) return;
+        
+        isLoadingNextBattle = true;
+        StateHasChanged();
+        
+        try
+        {
+            nextBattle = await BattlesApi.GetNextBattleAsync(activeCategoryId.Value);
+        }
+        catch (HttpRequestException)
+        {
+            // No battles found is expected - not an error
+            nextBattle = null;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading next battle: {ex.Message}", Severity.Error);
+            nextBattle = null;
+        }
+        finally
+        {
+            isLoadingNextBattle = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadEventData()
+    {
+        isLoading = true;
+        
+        try
+        {
+            eventData = await EventsApi.GetEventByIdAsync(EventId);
+            
+            // Auto-select the first active category (PreSelection or Bracket phase)
+            if (eventData != null && !activeCategoryId.HasValue)
+            {
+                var activeCategory = eventData.Categories
+                    .FirstOrDefault(c => c.CurrentPhase == CategoryPhase.PreSelection || c.CurrentPhase == CategoryPhase.Bracket);
+                
+                if (activeCategory != null)
+                {
+                    activeCategoryId = activeCategory.Id;
+                    await LoadNextBattle();
+                }
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error loading event: {ex.Message}", Severity.Error);
+            eventData = null;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Unexpected error: {ex.Message}", Severity.Error);
+            eventData = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private async Task OpenEditDialog()
+    {
+        if (eventData == null) return;
+        
+        var parameters = new DialogParameters
+        {
+            ["EventData"] = eventData
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<EditEventDialog>("Edit Event Details", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await LoadEventData();
+        }
+    }
+    
+    private async Task OpenRegenerateJudgePinDialog()
+    {
+        if (eventData == null) return;
+        
+        var parameters = new DialogParameters
+        {
+            ["EventId"] = EventId
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<RegenerateJudgePinDialog>("Regenerate Judge PIN", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Judge PIN regenerated successfully", Severity.Success);
+        }
+    }
+    
+    private async Task OpenCreateCategoryDialog()
+    {
+        if (eventData == null) return;
+        
+        var parameters = new DialogParameters
+        {
+            ["EventId"] = EventId
+        };
+        
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+        
+        var dialog = await DialogService.ShowAsync<CreateCategoryDialog>("Create Age Category", parameters, options);
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            await LoadEventData(); // Refresh to show the new category
+        }
+    }
+    
+    private string GetBirthYearRangeText(int? minYear, int? maxYear)
+    {
+        if (minYear.HasValue && maxYear.HasValue)
+        {
+            return $"{minYear} - {maxYear}";
+        }
+        else if (minYear.HasValue)
+        {
+            return $"{minYear} and later";
+        }
+        else if (maxYear.HasValue)
+        {
+            return $"up to {maxYear}";
+        }
+        return "All years";
+    }
+    
+    private Color GetPhaseColor(CategoryPhase phase)
+    {
+        return phase switch
+        {
+            CategoryPhase.Registration => Color.Info,
+            CategoryPhase.PreSelection => Color.Warning,
+            CategoryPhase.Bracket => Color.Success,
+            CategoryPhase.Completed => Color.Default,
+            _ => Color.Default
+        };
+    }
+    
+    private async Task StartCategoryBracket(CategoryResponse category)
+    {
+        if (eventData == null) return;
+        
+        var confirmed = await DialogService.ShowMessageBox(
+            "Start Category Bracket",
+            $"Start the bracket for {category.Name}? This will lock registrations and create initial battles.",
+            yesText: "Start", cancelText: "Cancel");
+        
+        if (confirmed != true) return;
+        
+        try
+        {
+            // Prompt for admin PIN
+            var parameters = new DialogParameters
+            {
+                ["Title"] = "Enter Admin PIN",
+                ["Message"] = "Admin PIN required to start bracket"
+            };
+            
+            var pinDialog = await DialogService.ShowAsync<PinInputDialog>("Admin PIN", parameters);
+            var pinResult = await pinDialog.Result;
+            
+            if (pinResult.Canceled || pinResult.Data is not string adminPin)
+            {
+                return;
+            }
+            
+            // Check if pre-selection is needed
+            if (category.RegistrationCount > category.BracketSize)
+            {
+                await CategoriesApi.StartPreSelectionAsync(eventData.Id, category.Id, adminPin);
+                Snackbar.Add($"Pre-selection started for {category.Name}", Severity.Success);
+            }
+            else if (category.RegistrationCount < 2)
+            {
+                Snackbar.Add($"Cannot start - need at least 2 registrations, have {category.RegistrationCount}", Severity.Error);
+                return;
+            }
+            else
+            {
+                await CategoriesApi.StartBracketAsync(eventData.Id, category.Id, adminPin);
+                Snackbar.Add($"Bracket started for {category.Name}", Severity.Success);
+            }
+            
+            // Set as active category and load next battle
+            activeCategoryId = category.Id;
+            await LoadEventData(); // Refresh data
+            await LoadNextBattle();
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private async Task ResetCategory(CategoryResponse category)
+    {
+        if (eventData == null) return;
+        
+        var confirmed = await DialogService.ShowMessageBox(
+            "Reset Category",
+            $"Reset {category.Name}? This will DELETE all battles and scores, returning to registration phase. This cannot be undone!",
+            yesText: "Reset", cancelText: "Cancel");
+        
+        if (confirmed != true) return;
+        
+        try
+        {
+            // Prompt for admin PIN
+            var parameters = new DialogParameters
+            {
+                ["Title"] = "Enter Admin PIN",
+                ["Message"] = "Admin PIN required to reset category"
+            };
+            
+            var pinDialog = await DialogService.ShowAsync<PinInputDialog>("Admin PIN", parameters);
+            var pinResult = await pinDialog.Result;
+            
+            if (pinResult.Canceled || pinResult.Data is not string adminPin)
+            {
+                return;
+            }
+            
+            await CategoriesApi.ResetCategoryAsync(eventData.Id, category.Id, adminPin);
+            Snackbar.Add($"{category.Name} reset successfully", Severity.Success);
+            
+            // Clear active category if this was the active one
+            if (activeCategoryId == category.Id)
+            {
+                activeCategoryId = null;
+                nextBattle = null;
+            }
+            
+            await LoadEventData(); // Refresh data
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private Color GetBattleStatusColor(BattleStatus status)
+    {
+        return status switch
+        {
+            BattleStatus.Scheduled => Color.Default,
+            BattleStatus.InProgress => Color.Primary,
+            BattleStatus.RevealCountdown => Color.Warning,
+            BattleStatus.Completed => Color.Success,
+            BattleStatus.Walkover => Color.Info,
+            _ => Color.Default
+        };
+    }
+}

@@ -3,14 +3,16 @@
 @using BreakingScoreBoard.Api.Models
 @using BreakingScoreBoard.Api.Services
 @using BreakingScoreBoard.Api.Contracts.Events
+@using BreakingScoreBoard.Api.Components
 @inject EventsApiClient EventsApi
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>Organizer Dashboard</PageTitle>
 
-<div class="dashboard-container">
+<PageContainer>
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
         <button class="nav-tab active">Create Breakdance Battle</button>
@@ -27,14 +29,12 @@
                           Label="Event Titel" 
                           Variant="Variant.Outlined"
                           Required="true"
-                          Class="mb-4"
-                          Style="font-size: 1.1rem;" />
+                          Class="mb-4 input-large" />
             
             <MudTextField @bind-Value="model.Location" 
                           Label="Location" 
                           Variant="Variant.Outlined"
-                          Class="mb-4"
-                          Style="font-size: 1.1rem;" />
+                          Class="mb-4 input-large" />
             
             <div class="mb-4">
                 <MudTextField @bind-Value="model.EventDateString" 
@@ -42,12 +42,12 @@
                               Variant="Variant.Outlined"
                               Placeholder="2026-02-15"
                               Required="true"
-                              Style="font-size: 1.1rem;" />
+                              Class="input-large" />
            </div>
             
             <div class="mb-4">
-                <label for="judgeCount" style="display: block; margin-bottom: 8px; font-size: 0.875rem; color: #888;">Number of Judges: 3 oder 5</label>
-                <select @bind="model.JudgeCount" id="judgeCount" style="width: 100%; padding: 16.5px 14px; font-size: 1.1rem; border: 1px solid #444; background: #1e1e23; color: #fff; border-radius: 4px;">
+                <label for="judgeCount" class="select-label">Number of Judges: 3 oder 5</label>
+                <select @bind="model.JudgeCount" id="judgeCount" class="select-field">
                     <option value="3">3 Judges</option>
                     <option value="5">5 Judges</option>
                 </select>
@@ -58,16 +58,14 @@
                           Variant="Variant.Outlined"
                           InputType="InputType.Password"
                           Required="true"
-                          Class="mb-4"
-                          Style="font-size: 1.1rem;" />
+                          Class="mb-4 input-large" />
             
             <MudTextField @bind-Value="model.AdminPin" 
                           Label="Admin PIN" 
                           Variant="Variant.Outlined"
                           InputType="InputType.Password"
                           Required="true"
-                          Class="mb-5"
-                          Style="font-size: 1.1rem;" />
+                          Class="mb-5 input-large" />
             
             <MudButton ButtonType="ButtonType.Submit" 
                        Variant="Variant.Filled" 
@@ -98,12 +96,12 @@
             @foreach (var evt in events.Take(5))
             {
                 <div class="event-item">
-                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <div style="flex: 1; cursor: pointer;" @onclick='() => Navigation.NavigateTo($"/events/{evt.Id}")'>
+                    <div class="event-item-row">
+                        <div class="event-item-title" @onclick='() => Navigation.NavigateTo($"/events/detail/{evt.Id}")'>
                             <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="mr-2" />
                             @evt.Title - @evt.Location - @evt.EventDate.ToString("dd.MM.yyyy")
                         </div>
-                        <div style="display: flex; gap: 8px;">
+                        <div class="event-item-actions">
                             <MudTooltip Text="Spectator Scoreboard">
                                 <MudIconButton Icon="@Icons.Material.Filled.Tv" 
                                                Size="Size.Small" 
@@ -118,13 +116,19 @@
                                                Href="@($"/judge/scoring?eventId={evt.Id}")"
                                                @onclick:stopPropagation="true" />
                             </MudTooltip>
+                            <MudTooltip Text="Delete Event">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                               Size="Size.Small" 
+                                               Color="Color.Error"
+                                               OnClick="@(async () => await DeleteEventAsync(evt))" />
+                            </MudTooltip>
                         </div>
                     </div>
                 </div>
             }
         </div>
     }
-</div>
+</PageContainer>
 
 @code {
     private CreateEventViewModel model = new();
@@ -181,7 +185,6 @@
             Snackbar.Add($"Event '{createdEvent.Title}' created successfully!", Severity.Success);
             model = new CreateEventViewModel(); // Reset form
             await LoadEvents(); // Refresh list
-            StateHasChanged(); // Force UI update
         }
         catch (Exception ex)
         {
@@ -190,6 +193,40 @@
         finally
         {
             isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteEventAsync(EventResponse evt)
+    {
+        var parameters = new DialogParameters
+        {
+            { nameof(DeleteEventDialog.EventTitle), evt.Title }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteEventDialog>("Confirm Delete", parameters);
+        var result = await dialog.Result;
+
+        if (result.Canceled)
+        {
+            return;
+        }
+
+        var adminPin = result.Data?.ToString();
+        if (string.IsNullOrEmpty(adminPin))
+        {
+            Snackbar.Add("Admin PIN is required", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            await EventsApi.DeleteEventAsync(evt.Id, adminPin);
+            Snackbar.Add($"Event '{evt.Title}' deleted successfully!", Severity.Success);
+            await LoadEvents(); // Refresh list
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
 

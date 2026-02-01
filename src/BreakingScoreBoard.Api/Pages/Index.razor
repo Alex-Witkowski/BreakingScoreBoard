@@ -1,0 +1,167 @@
+@page "/"
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Services
+@using BreakingScoreBoard.Api.Contracts.Events
+@inject EventsApiClient EventsApi
+@inject NavigationManager Navigation
+
+<PageTitle>Breaking ScoreBoard - Upcoming Events</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true" Color="Color.Primary">
+        <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" /> Upcoming Breaking Events
+    </MudText>
+
+    @if (isLoading)
+    {
+        <MudPaper Class="pa-8 mt-6" Elevation="2">
+            <div style="text-align: center;">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Class="mt-4">Loading events...</MudText>
+            </div>
+        </MudPaper>
+    }
+    else if (loadError != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-6">@loadError</MudAlert>
+    }
+    else if (events == null || !events.Any())
+    {
+        <MudPaper Class="pa-8 mt-6" Elevation="2">
+            <div style="text-align: center;">
+                <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Large" Style="font-size: 4rem; opacity: 0.3;" />
+                <MudText Typo="Typo.h6" Class="mt-4">No upcoming events</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2" Style="opacity: 0.7;">Check back later for new breaking battles!</MudText>
+            </div>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid Class="mt-6">
+            @foreach (var evt in events)
+            {
+                var isPast = evt.EventDate < today;
+                
+                <MudItem xs="12" md="6" lg="4">
+                    <MudCard Elevation="3" Class="@(isPast ? "past-event" : "")">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">@evt.Title</MudText>
+                                <MudText Typo="Typo.body2" Style="opacity: 0.7;">
+                                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" />
+                                    @evt.EventDate.ToString("dddd, MMMM d, yyyy")
+                                </MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            @if (!string.IsNullOrEmpty(evt.Location))
+                            {
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Color="Color.Primary" />
+                                    @evt.Location
+                                </MudText>
+                            }
+                            @if (evt.Categories.Any())
+                            {
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Small" Color="Color.Secondary" />
+                                    @evt.Categories.Count @(evt.Categories.Count == 1 ? "category" : "categories")
+                                </MudText>
+                            }
+                            <MudText Typo="Typo.body2">
+                                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Color="Color.Tertiary" />
+                                @evt.JudgeCount @(evt.JudgeCount == 1 ? "judge" : "judges")
+                            </MudText>
+                            @if (isPast)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default" Class="mt-2">Past Event</MudChip>
+                            }
+                            else if (evt.RegistrationOpen)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Class="mt-2">Registration Open</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="mt-2">Registration Closed</MudChip>
+                            }
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton 
+                                Variant="Variant.Filled" 
+                                Color="Color.Primary" 
+                                FullWidth="true"
+                                OnClick="@(() => NavigateToSpectatorView(evt.Id))">
+                                <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="mr-2" />
+                                View Scoreboard
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    <MudDivider Class="my-8" />
+    
+    <MudText Typo="Typo.body2" Align="Align.Center" Style="opacity: 0.6;">
+        Breaking ScoreBoard - Your comprehensive breaking battle management system
+    </MudText>
+</MudContainer>
+
+<style>
+    .past-event {
+        opacity: 0.7;
+        filter: grayscale(0.3);
+    }
+</style>
+
+@code {
+    private List<EventResponse>? events;
+    private bool isLoading = true;
+    private string? loadError;
+    private DateOnly today;
+
+    protected override async Task OnInitializedAsync()
+    {
+        today = DateOnly.FromDateTime(DateTime.Today);
+        await LoadEvents();
+    }
+
+    private async Task LoadEvents()
+    {
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            // Get all events and order by date (upcoming first, then past events)
+            var allEvents = await EventsApi.GetEventsAsync();
+            
+            // Separate upcoming and past events
+            var upcomingEvents = allEvents.Where(e => e.EventDate >= today)
+                                          .OrderBy(e => e.EventDate)
+                                          .ToList();
+            
+            var pastEvents = allEvents.Where(e => e.EventDate < today)
+                                      .OrderByDescending(e => e.EventDate)
+                                      .ToList();
+            
+            // Combine: upcoming first, then past events
+            events = upcomingEvents.Concat(pastEvents).ToList();
+        }
+        catch (Exception ex)
+        {
+            loadError = "Unable to load events. Please try again later.";
+            events = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateToSpectatorView(Guid eventId)
+    {
+        Navigation.NavigateTo($"/spectator/scoreboard?eventId={eventId}");
+    }
+}

@@ -338,4 +338,81 @@ public class EventsControllerTests : IAsyncLifetime
     }
 
     #endregion
+
+    #region DELETE /events/{eventId} - Delete Event
+
+    [Fact]
+    public async Task DeleteEvent_WithValidAdminPin_DeletesEvent()
+    {
+        // Arrange - Create an event
+        var createRequest = new CreateEventRequest
+        {
+            Title = "Event to Delete",
+            EventDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            JudgeCount = 3,
+            AdminPin = "admin999",
+            JudgePin = "judge888"
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/events", createRequest);
+        var createdEvent = await createResponse.Content.ReadFromJsonAsync<EventResponse>();
+
+        // Add admin PIN header
+        _client.DefaultRequestHeaders.Add("X-Pin", "admin999");
+
+        // Act
+        var deleteResponse = await _client.DeleteAsync($"/events/{createdEvent!.Id}");
+
+        // Assert
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Verify event is deleted
+        var getResponse = await _client.GetAsync($"/events/{createdEvent.Id}");
+        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        // Cleanup
+        _client.DefaultRequestHeaders.Remove("X-Pin");
+    }
+
+    [Fact]
+    public async Task DeleteEvent_WithoutAdminPin_ReturnsUnauthorized()
+    {
+        // Arrange - Create an event
+        var createRequest = new CreateEventRequest
+        {
+            Title = "Protected Event",
+            EventDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+            JudgeCount = 5,
+            AdminPin = "admin777",
+            JudgePin = "judge666"
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/events", createRequest);
+        var createdEvent = await createResponse.Content.ReadFromJsonAsync<EventResponse>();
+
+        // Act - No PIN header
+        var deleteResponse = await _client.DeleteAsync($"/events/{createdEvent!.Id}");
+
+        // Assert
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeleteEvent_NonExistentEvent_ReturnsNotFound()
+    {
+        // Arrange
+        var nonExistentId = Guid.NewGuid();
+        _client.DefaultRequestHeaders.Add("X-Pin", "admin123");
+
+        // Act
+        var deleteResponse = await _client.DeleteAsync($"/events/{nonExistentId}");
+
+        // Assert
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        // Cleanup
+        _client.DefaultRequestHeaders.Remove("X-Pin");
+    }
+
+    #endregion
 }

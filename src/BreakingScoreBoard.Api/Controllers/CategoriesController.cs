@@ -146,6 +146,8 @@ public class CategoriesController : ControllerBase
             EventId = eventId,
             Name = request.Name,
             MaxAge = request.MaxAge,
+            MinBirthYear = request.MinBirthYear,
+            MaxBirthYear = request.MaxBirthYear,
             BracketSize = request.BracketSize,
             CurrentPhase = CategoryPhase.Registration,
             SortOrder = maxSortOrder + 1
@@ -230,6 +232,88 @@ public class CategoriesController : ControllerBase
             overflow,
             battlesCreated = battles.Count,
             selectedBreakers = selectedRegistrations.Count
+        });
+    }
+
+    /// <summary>
+    /// Starts the initial bracket for a category (when registrations ≤ bracket size).
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <returns>Result of bracket initialization.</returns>
+    [HttpPost("{categoryId:guid}/start-bracket")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> StartBracket(Guid eventId, Guid categoryId)
+    {
+        var category = await _dbContext.AgeCategories
+            .Include(c => c.Registrations)
+                .ThenInclude(r => r.Breaker)
+            .FirstOrDefaultAsync(c => c.Id == categoryId && c.EventId == eventId);
+
+        if (category is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Category not found"));
+        }
+
+        // Check if already started
+        if (category.CurrentPhase != CategoryPhase.Registration)
+        {
+            return BadRequest(ErrorResponse.FromMessage("Bracket can only be started during registration phase"));
+        }
+
+        // Check if battles already exist
+        var existingBattles = await _dbContext.Battles
+            .AnyAsync(b => b.CategoryId == categoryId);
+
+        if (existingBattles)
+        {
+            return BadRequest(ErrorResponse.FromMessage("Battles already exist for this category"));
+        }
+
+        // Get active registrations
+        var activeRegistrations = category.Registrations
+            .Where(r => r.Status == RegistrationStatus.Active)
+            .ToList();
+
+        if (activeRegistrations.Count < 2)
+        {
+            return BadRequest(ErrorResponse.FromMessage($"Cannot start bracket - need at least 2 registrations, have {activeRegistrations.Count}"));
+        }
+
+        // Calculate and lock bracket size
+        var bracketSize = AgeCategory.CalculateBracketSize(activeRegistrations.Count);
+        category.BracketSize = bracketSize;
+
+        // Check if pre-selection is needed instead
+        if (activeRegistrations.Count > bracketSize)
+        {
+            return BadRequest(ErrorResponse.FromMessage($"Cannot start bracket - {activeRegistrations.Count} registrations exceed bracket size {bracketSize}. Use start-preselection instead."));
+        }
+
+        // Create initial bracket with random pairing
+        var battles = _bracketService.CreateInitialBracket(category, activeRegistrations);
+
+        _dbContext.Battles.AddRange(battles);
+
+        // Update category phase to Bracket
+        category.CurrentPhase = CategoryPhase.Bracket;
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Started initial bracket for category {CategoryId}: {RegistrationCount} registrations, {BattleCount} battles created",
+            categoryId, activeRegistrations.Count, battles.Count);
+
+        return Ok(new
+        {
+            message = "Bracket started successfully",
+            bracketSize,
+            registrations = activeRegistrations.Count,
+            battlesCreated = battles.Count,
+            byesGranted = activeRegistrations.Count - (battles.Count * 2)
         });
     }
 
@@ -337,18 +421,78 @@ public class CategoriesController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Resets a category by deleting all battles and scores, returning to registration phase.
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <returns>Result of category reset.</returns>
+    [HttpPost("{categoryId:guid}/reset")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResetCategory(Guid eventId, Guid categoryId)
+    {
+        var category = await _dbContext.AgeCategories
+            .Include(c => c.Registrations)
+            .FirstOrDefaultAsync(c => c.Id == categoryId && c.EventId == eventId);
+
+        if (category is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Category not found"));
+        }
+
+        // Get all battles for this category
+        var battles = await _dbContext.Battles
+            .Include(b => b.Scores)
+            .Where(b => b.CategoryId == categoryId)
+            .ToListAsync();
+
+        var battlesCount = battles.Count;
+        var scoresCount = battles.Sum(b => b.Scores.Count);
+
+        // Delete all battles (scores will be cascade deleted)
+        _dbContext.Battles.RemoveRange(battles);
+
+        // Reset category phase to Registration
+        category.CurrentPhase = CategoryPhase.Registration;
+
+        // Reset all registrations to Active status
+        foreach (var registration in category.Registrations)
+        {
+            registration.Status = RegistrationStatus.Active;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Reset category {CategoryId}: deleted {BattleCount} battles and {ScoreCount} scores",
+            categoryId, battlesCount, scoresCount);
+
+        return Ok(new
+        {
+            message = "Category reset successfully",
+            battlesDeleted = battlesCount,
+            scoresDeleted = scoresCount,
+            currentPhase = CategoryPhase.Registration
+        });
+    }
+
     private static CategoryResponse MapToResponse(AgeCategory category)
     {
+        var registrationCount = category.Registrations.Count;
         return new CategoryResponse
         {
             Id = category.Id,
             EventId = category.EventId,
             Name = category.Name,
             MaxAge = category.MaxAge,
-            BracketSize = category.BracketSize,
+            MinBirthYear = category.MinBirthYear,
+            MaxBirthYear = category.MaxBirthYear,
+            BracketSize = AgeCategory.CalculateBracketSize(registrationCount),
             CurrentPhase = category.CurrentPhase,
             SortOrder = category.SortOrder,
-            RegistrationCount = category.Registrations.Count
+            RegistrationCount = registrationCount
         };
     }
 
@@ -360,6 +504,9 @@ public class CategoriesController : ControllerBase
                 Id = r.Id,
                 BreakerId = r.BreakerId,
                 BreakerName = r.Breaker.Name,
+                BattleName = r.Breaker.DisplayName,
+                CategoryId = r.CategoryId,
+                CategoryName = category.Name,
                 Age = r.Breaker.GetAgeAtDate(category.Event.EventDate),
                 Status = r.Status,
                 RegisteredAt = r.RegisteredAt
@@ -372,7 +519,7 @@ public class CategoriesController : ControllerBase
             Id = category.Id,
             Name = category.Name,
             MaxAge = category.MaxAge,
-            BracketSize = category.BracketSize,
+            BracketSize = AgeCategory.CalculateBracketSize(registrations.Count),
             Registrations = registrations
         };
     }

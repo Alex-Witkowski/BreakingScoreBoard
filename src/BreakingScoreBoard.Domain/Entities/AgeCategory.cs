@@ -18,6 +18,12 @@ public class AgeCategory
     /// <summary>Upper age limit (null = no limit, e.g., "Open").</summary>
     public int? MaxAge { get; set; }
 
+    /// <summary>Minimum birth year for this category (null = no minimum).</summary>
+    public int? MinBirthYear { get; set; }
+
+    /// <summary>Maximum birth year for this category (null = no maximum).</summary>
+    public int? MaxBirthYear { get; set; }
+
     /// <summary>Target bracket size (8, 16, 32, or 64).</summary>
     public int BracketSize { get; set; }
 
@@ -41,4 +47,21 @@ public class AgeCategory
     /// Validates that BracketSize is a valid power of 2 (8, 16, 32, or 64).
     /// </summary>
     public bool IsValidBracketSize() => BracketSize is 8 or 16 or 32 or 64;
+
+    /// <summary>
+    /// Calculates the bracket size based on number of registered dancers.
+    /// Returns the next power of 2 that fits all registrations (minimum 2, maximum 64).
+    /// </summary>
+    /// <param name="registrationCount">Number of registered dancers</param>
+    /// <returns>Bracket size (2, 4, 8, 16, 32, or 64)</returns>
+    public static int CalculateBracketSize(int registrationCount)
+    {
+        if (registrationCount <= 0) return 2;
+        if (registrationCount <= 2) return 2;
+        if (registrationCount <= 4) return 4;
+        if (registrationCount <= 8) return 8;
+        if (registrationCount <= 16) return 16;
+        if (registrationCount <= 32) return 32;
+        return 64;
+    }
 }

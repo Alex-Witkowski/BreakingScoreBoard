@@ -1,0 +1,157 @@
+@rendermode InteractiveServer
+@using BreakingScoreBoard.Api.Services
+@using BreakingScoreBoard.Api.Contracts.Events
+@inject EventsApiClient EventsApi
+@inject ISnackbar Snackbar
+
+<MudDialog Style="background: rgba(30, 30, 35, 0.98); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1);">
+    <DialogContent>
+        <MudText Style="color: white; font-size: 1.2rem; margin-bottom: 24px; font-weight: 300;">
+            Edit Event Details
+        </MudText>
+        
+        <MudForm @ref="form" @bind-IsValid="@isFormValid">
+            <MudTextField @bind-Value="model.Title"
+                          Label="Event Title"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          MaxLength="200"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudDatePicker @bind-Date="datePickerValue"
+                           Label="Event Date"
+                           Variant="Variant.Outlined"
+                           Required="true"
+                           Editable="true"
+                           DateFormat="dd.MM.yyyy"
+                           Class="mb-4"
+                           Style="font-size: 1.1rem;" />
+            
+            <MudTextField @bind-Value="model.Location"
+                          Label="Location (optional)"
+                          Variant="Variant.Outlined"
+                          MaxLength="500"
+                          Class="mb-4"
+                          Style="font-size: 1.1rem;" />
+            
+            <MudText Style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin-bottom: 12px; margin-top: 16px;">
+                Enter your admin PIN to save changes
+            </MudText>
+            
+            <MudTextField @bind-Value="model.AdminPin"
+                          Label="Admin PIN"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Style="font-size: 1.1rem;" />
+        </MudForm>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Style="color: rgba(255, 255, 255, 0.7); text-transform: none; font-size: 1rem;">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="Submit" 
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!isFormValid || isSaving)"
+                   Style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); color: white; font-size: 1rem; text-transform: none; font-weight: 500;">
+            @if (isSaving)
+            {
+                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                <span>Saving...</span>
+            }
+            else
+            {
+                <span>Save Changes</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    [Parameter]
+    public EventResponse EventData { get; set; } = default!;
+    
+    private MudForm form = default!;
+    private bool isFormValid;
+    private bool isSaving;
+    
+    private EditEventModel model = new();
+    private DateTime? datePickerValue;
+    
+    private class EditEventModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public DateOnly EventDate { get; set; }
+        public string? Location { get; set; }
+        public string AdminPin { get; set; } = string.Empty;
+    }
+    
+    protected override void OnInitialized()
+    {
+        // Initialize form with current event data
+        model.Title = EventData.Title;
+        model.EventDate = EventData.EventDate;
+        model.Location = EventData.Location;
+        
+        // Convert DateOnly to DateTime for MudDatePicker
+        datePickerValue = EventData.EventDate.ToDateTime(TimeOnly.MinValue);
+    }
+    
+    private async Task Submit()
+    {
+        if (!isFormValid) return;
+        
+        isSaving = true;
+        StateHasChanged();
+        
+        try
+        {
+            // Update EventDate from date picker
+            if (datePickerValue.HasValue)
+            {
+                model.EventDate = DateOnly.FromDateTime(datePickerValue.Value);
+            }
+            
+            var updateRequest = new UpdateEventRequest
+            {
+                Title = model.Title,
+                EventDate = model.EventDate,
+                Location = model.Location
+            };
+            
+            await EventsApi.UpdateEventAsync(EventData.Id, updateRequest, model.AdminPin);
+            
+            Snackbar.Add("Event updated successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Snackbar.Add("Invalid admin PIN", Severity.Error);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            Snackbar.Add("Cannot modify event after battles have started", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error updating event: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+    
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

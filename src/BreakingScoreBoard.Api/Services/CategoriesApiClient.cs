@@ -41,27 +41,29 @@ public class CategoriesApiClient : ApiClientBase
     /// Start pre-selection for a category
     /// </summary>
     public async Task StartPreSelectionAsync(
+        Guid eventId,
         Guid categoryId,
         string adminPin,
         CancellationToken ct = default)
     {
         await PostAsync<object>(
-            $"/categories/{categoryId}/start-preselection",
+            $"/events/{eventId}/categories/{categoryId}/start-preselection",
             new { },
             adminPin,
             ct);
     }
 
     /// <summary>
-    /// Start bracket for a category
+    /// Start initial bracket for a category
     /// </summary>
     public async Task StartBracketAsync(
+        Guid eventId,
         Guid categoryId,
         string adminPin,
         CancellationToken ct = default)
     {
         await PostAsync<object>(
-            $"/categories/{categoryId}/start-bracket",
+            $"/events/{eventId}/categories/{categoryId}/start-bracket",
             new { },
             adminPin,
             ct);
@@ -71,12 +73,29 @@ public class CategoriesApiClient : ApiClientBase
     /// Advance bracket to next level
     /// </summary>
     public async Task AdvanceBracketAsync(
+        Guid eventId,
         Guid categoryId,
         string adminPin,
         CancellationToken ct = default)
     {
         await PostAsync<object>(
-            $"/categories/{categoryId}/advance-bracket",
+            $"/events/{eventId}/categories/{categoryId}/advance-bracket",
+            new { },
+            adminPin,
+            ct);
+    }
+
+    /// <summary>
+    /// Reset category by deleting all battles and returning to registration phase
+    /// </summary>
+    public async Task ResetCategoryAsync(
+        Guid eventId,
+        Guid categoryId,
+        string adminPin,
+        CancellationToken ct = default)
+    {
+        await PostAsync<object>(
+            $"/events/{eventId}/categories/{categoryId}/reset",
             new { },
             adminPin,
             ct);
