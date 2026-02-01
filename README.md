@@ -110,7 +110,7 @@ dotnet test --filter "FullyQualifiedName~Integration"
 The API uses PIN-based authentication via the `X-Pin` header:
 
 ```bash
-# Admin operations
+# Admin operations (use port 5296 for manual install, 8080 for Docker)
 curl -H "X-Pin: your-admin-pin" -X DELETE http://localhost:5296/events/{id}
 
 # Judge score submission
@@ -118,6 +118,8 @@ curl -H "X-Pin: your-judge-pin" -X POST http://localhost:5296/scores \
   -H "Content-Type: application/json" \
   -d '{"battleId":"...","judgeIdentifier":"J1","breaker1Score":85,"breaker2Score":90}'
 ```
+
+**Note:** Use port `5296` for manual installation, `8080` for Docker deployment.
 
 ### Response Format
 
