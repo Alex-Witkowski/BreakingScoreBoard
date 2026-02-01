@@ -12,7 +12,7 @@
 ## Features
 
 - **📅 Event Management**: Create and manage breaking battle events with multiple age categories
-- **👥 Breaker Registration**: Register participants with age-based categories (U8, U10, U14, U16, U18, Open)
+- **👥 Breaker Registration**: Register participants with freely configurable age categories
 - **🏆 Tournament Brackets**: Automatic knockout bracket generation with pre-selection rounds
 - **⚖️ Judge Scoring**: Multi-judge scoring (3 or 5 judges) with average calculation and forced differentiation
 - **📊 Live Scoreboard**: Real-time battle results and standings for spectators
@@ -54,8 +54,6 @@ The application will be available at:
 - **Swagger UI**: `http://localhost:5296/swagger`
 - **Blazor Pages**:
   - Organizer Dashboard: `http://localhost:5296/organizer/dashboard`
-  - Event Details: `http://localhost:5296/events/detail`
-  - Breaker Registration: `http://localhost:5296/events/register`
   - Judge Scoring: `http://localhost:5296/judge/scoring`
   - Spectator Scoreboard: `http://localhost:5296/spectator/scoreboard`
 
