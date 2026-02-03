@@ -28,6 +28,7 @@ public class PublicController : ControllerBase
     /// Gets live scoreboard showing active battles and recent results.
     /// </summary>
     /// <param name="eventId">Event ID.</param>
+    /// <param name="includeScheduled">Include scheduled battles in addition to in-progress battles.</param>
     /// <returns>Scoreboard with active battles and recent results.</returns>
     /// <response code="200">Scoreboard retrieved successfully</response>
     /// <response code="404">Event not found</response>
@@ -50,7 +51,7 @@ public class PublicController : ControllerBase
             ? new[] { BattleStatus.Scheduled, BattleStatus.InProgress, BattleStatus.RevealCountdown }
             : new[] { BattleStatus.InProgress, BattleStatus.RevealCountdown };
 
-        var activeBattles = await _context.Battles
+        var activeBattlesQuery = _context.Battles
             .Include(b => b.Category)
                 .ThenInclude(c => c.Event)
             .Include(b => b.Breaker1)
@@ -58,8 +59,19 @@ public class PublicController : ControllerBase
             .Include(b => b.Scores)
             .Where(b => b.Category.EventId == eventId &&
                        activeStatuses.Contains(b.Status))
-            .AsNoTracking()
-            .ToListAsync();
+            .OrderBy(b => b.CategoryId)
+            .ThenBy(b => b.BracketLevel)
+            .ThenBy(b => b.BracketPosition)
+            .ThenBy(b => b.ScheduledAt)
+            .AsNoTracking();
+
+        var allBattles = await activeBattlesQuery.ToListAsync();
+
+        // Filter to next battle per category only
+        var activeBattles = allBattles
+            .GroupBy(b => b.CategoryId)
+            .Select(g => g.First())
+            .ToList();
 
         // Get recent completed battles (last 10)
         var recentResults = await _context.Battles
