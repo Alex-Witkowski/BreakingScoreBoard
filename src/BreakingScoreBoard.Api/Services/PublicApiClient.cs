@@ -15,9 +15,18 @@ public class PublicApiClient : ApiClientBase
     /// <summary>
     /// Get scoreboard for an event (active battles and recent results)
     /// </summary>
-    public async Task<ScoreboardResponse> GetScoreboardAsync(Guid eventId, CancellationToken ct = default)
+    public async Task<ScoreboardResponse> GetScoreboardAsync(
+        Guid eventId,
+        bool includeScheduled = false,
+        CancellationToken ct = default)
     {
-        return await GetAsync<ScoreboardResponse>($"/public/events/{eventId}/scoreboard", ct);
+        var url = $"/public/events/{eventId}/scoreboard";
+        if (includeScheduled)
+        {
+            url += "?includeScheduled=true";
+        }
+
+        return await GetAsync<ScoreboardResponse>(url, ct);
     }
 
     /// <summary>

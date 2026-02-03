@@ -4,6 +4,7 @@
 @using BreakingScoreBoard.Api.Contracts.Battles
 @using BreakingScoreBoard.Api.Contracts.Events
 @using BreakingScoreBoard.Api.Contracts.Public
+@using BreakingScoreBoard.Api.Services
 @using System.Net.Http.Json
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager Navigation
@@ -49,7 +50,7 @@
                     <MudSelect T="Guid?"
                                Value="@selectedBattleId"
                                ValueChanged="@OnBattleSelected"
-                               Label="Active Battle"
+                               Label="Battle"
                                Variant="Variant.Outlined"
                                HelperText="@GetBattleHelperText()"
                                Class="mb-4"
@@ -92,7 +93,7 @@
                     </MudButton>
 
                     <MudAlert Severity="Severity.Info">
-                        Enter the battle ID and judge PIN provided by the event organizer.
+                        Select the event and active battle, then enter the judge PIN from the organizer.
                     </MudAlert>
                 </MudPaper>
             </MudItem>
@@ -235,6 +236,7 @@
     private Guid? selectedBattleId;
     private bool isLoadingEvents = false;
     private bool isLoadingBattles = false;
+    private int eventSelectionVersion = 0;
     
     private Guid? eventIdForPin;
     private BattleDetailResponse? currentBattle;
@@ -291,31 +293,47 @@
         authError = null;
         scoreError = null;
         scoreSuccess = null;
+
+        var currentVersion = ++eventSelectionVersion;
         
         if (eventId == null)
         {
+            isLoadingBattles = false;
             return;
         }
         
         isLoadingBattles = true;
         try
         {
-            var scoreboard = await PublicClient.GetScoreboardAsync(eventId.Value);
+            var scoreboard = await PublicClient.GetScoreboardAsync(eventId.Value, includeScheduled: true);
+            if (currentVersion != eventSelectionVersion)
+            {
+                return;
+            }
+
             activeBattles = scoreboard.ActiveBattles;
             
             if (activeBattles == null || !activeBattles.Any())
             {
-                Snackbar.Add("No active battles found for this event", Severity.Info);
+                Snackbar.Add("No battles available for this event", Severity.Info);
             }
         }
         catch (Exception ex)
         {
+            if (currentVersion != eventSelectionVersion)
+            {
+                return;
+            }
+
             Snackbar.Add($"Error loading battles: {ex.Message}", Severity.Error);
             activeBattles = new List<LiveBattleResponse>();
         }
         finally
         {
-            isLoadingBattles = false;
+            if (currentVersion == eventSelectionVersion)
+            {
+                isLoadingBattles = false;
+            }
         }
     }
     
@@ -348,7 +366,7 @@
         }
         if (activeBattles == null || !activeBattles.Any())
         {
-            return "No active battles for this event";
+            return "No battles available for this event";
         }
         return "Select a battle to score";
     }

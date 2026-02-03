@@ -34,7 +34,7 @@ public class PublicController : ControllerBase
     [HttpGet("scoreboard")]
     [ProducesResponseType(typeof(ScoreboardResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetScoreboard(Guid eventId)
+    public async Task<IActionResult> GetScoreboard(Guid eventId, [FromQuery] bool includeScheduled = false)
     {
         var battleEvent = await _context.BattleEvents
             .AsNoTracking()
@@ -46,6 +46,10 @@ public class PublicController : ControllerBase
         }
 
         // Get active battles (InProgress or RevealCountdown)
+        var activeStatuses = includeScheduled
+            ? new[] { BattleStatus.Scheduled, BattleStatus.InProgress, BattleStatus.RevealCountdown }
+            : new[] { BattleStatus.InProgress, BattleStatus.RevealCountdown };
+
         var activeBattles = await _context.Battles
             .Include(b => b.Category)
                 .ThenInclude(c => c.Event)
@@ -53,7 +57,7 @@ public class PublicController : ControllerBase
             .Include(b => b.Breaker2)
             .Include(b => b.Scores)
             .Where(b => b.Category.EventId == eventId &&
-                       (b.Status == BattleStatus.InProgress || b.Status == BattleStatus.RevealCountdown))
+                       activeStatuses.Contains(b.Status))
             .AsNoTracking()
             .ToListAsync();
 
