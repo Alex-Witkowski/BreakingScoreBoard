@@ -2,9 +2,14 @@
 @rendermode InteractiveServer
 @using BreakingScoreBoard.Api.Models
 @using BreakingScoreBoard.Api.Contracts.Battles
+@using BreakingScoreBoard.Api.Contracts.Events
+@using BreakingScoreBoard.Api.Contracts.Public
 @using System.Net.Http.Json
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager Navigation
+@inject EventsApiClient EventsClient
+@inject PublicApiClient PublicClient
+@inject ISnackbar Snackbar
 
 <PageTitle>Judge Scoring</PageTitle>
 
@@ -23,11 +28,43 @@
                         <MudAlert Severity="Severity.Error" Class="mb-4">@authError</MudAlert>
                     }
 
-                    <MudTextField @bind-Value="battleIdInput" 
-                                  Label="Battle ID" 
-                                  Variant="Variant.Outlined"
-                                  HelperText="Enter the battle ID you want to score"
-                                  Class="mb-4" />
+                    <MudSelect T="Guid?"
+                               Value="@selectedEventId"
+                               ValueChanged="@OnEventSelected"
+                               Label="Event"
+                               Variant="Variant.Outlined"
+                               HelperText="Select the event you're judging"
+                               Class="mb-4"
+                               Disabled="@isLoadingEvents">
+                        <MudSelectItem T="Guid?" Value="null">Select an event...</MudSelectItem>
+                        @if (events != null)
+                        {
+                            @foreach (var evt in events)
+                            {
+                                <MudSelectItem T="Guid?" Value="@evt.Id">@evt.Title (@evt.EventDate.ToString("dd.MM.yyyy"))</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="Guid?"
+                               Value="@selectedBattleId"
+                               ValueChanged="@OnBattleSelected"
+                               Label="Active Battle"
+                               Variant="Variant.Outlined"
+                               HelperText="@GetBattleHelperText()"
+                               Class="mb-4"
+                               Disabled="@(selectedEventId == null || isLoadingBattles || activeBattles == null || !activeBattles.Any())">
+                        <MudSelectItem T="Guid?" Value="null">Select a battle...</MudSelectItem>
+                        @if (activeBattles != null)
+                        {
+                            @foreach (var battle in activeBattles)
+                            {
+                                <MudSelectItem T="Guid?" Value="@battle.BattleId">
+                                    @battle.CategoryName: @battle.Breaker1.Name vs @battle.Breaker2.Name
+                                </MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
 
                     <MudTextField @bind-Value="judgePin" 
                                   Label="Judge PIN" 
@@ -65,40 +102,8 @@
     {
         <!-- Scoring Interface -->
         <MudGrid>
-            <!-- Battle Finder -->
+            <!-- Battle Details -->
             <MudItem xs="12" lg="6">
-                <MudPaper Class="form-panel pa-4">
-                    <h2 class="section-header no-margin-top">Find Battle</h2>
-                    
-                    @if (!string.IsNullOrEmpty(loadError))
-                    {
-                        <MudAlert Severity="Severity.Error" Class="mb-4">@loadError</MudAlert>
-                    }
-
-                    <MudTextField @bind-Value="battleIdInput" 
-                                  Label="Battle ID" 
-                                  Variant="Variant.Outlined"
-                                  HelperText="Enter the battle ID to load scoring interface"
-                                  Class="mb-4" />
-
-                    <MudButton Variant="Variant.Filled" 
-                               Color="Color.Primary" 
-                               FullWidth="true"
-                               OnClick="@LoadBattle" 
-                               Disabled="@isLoading"
-                               Class="mb-3">
-                        @if (isLoading)
-                        {
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            <span>Loading...</span>
-                        }
-                        else
-                        {
-                            <span>Load Battle</span>
-                        }
-                    </MudButton>
-                </MudPaper>
-
                 @if (currentBattle != null)
                 {
                     <MudPaper Class="form-panel pa-4 mt-4">
@@ -203,7 +208,7 @@
                 {
                     <MudPaper Class="form-panel empty-state">
                         <MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Large" />
-                        <p class="mt-3">Enter a Battle ID to start scoring</p>
+                        <p class="mt-3">Select an event and battle to start scoring</p>
                     </MudPaper>
                 }
             </MudItem>
@@ -223,37 +228,144 @@
     private string judgePin = string.Empty;
     private string? authError;
 
-    private string battleIdInput = string.Empty;
+    // Event and battle selection
+    private List<EventResponse>? events;
+    private Guid? selectedEventId;
+    private List<LiveBattleResponse>? activeBattles;
+    private Guid? selectedBattleId;
+    private bool isLoadingEvents = false;
+    private bool isLoadingBattles = false;
+    
     private Guid? eventIdForPin;
     private BattleDetailResponse? currentBattle;
     private SubmitScoresViewModel scoreModel = new();
     
-    private bool isLoading = false;
     private bool isSubmitting = false;
-    private string? loadError;
     private string? scoreError;
     private string? scoreSuccess;
     
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // If battleId provided in query string, populate the battle ID field
-        if (!string.IsNullOrWhiteSpace(BattleIdFromQuery))
+        await LoadEventsAsync();
+        
+        // If eventId provided in query string, pre-select it
+        if (!string.IsNullOrWhiteSpace(EventIdFromQuery) && Guid.TryParse(EventIdFromQuery, out var eventId))
         {
-            battleIdInput = BattleIdFromQuery;
+            selectedEventId = eventId;
+            await OnEventSelected(eventId);
         }
-        else if (!string.IsNullOrWhiteSpace(EventIdFromQuery))
+        
+        // If battleId provided in query string, try to select it
+        if (!string.IsNullOrWhiteSpace(BattleIdFromQuery) && Guid.TryParse(BattleIdFromQuery, out var battleId))
         {
-            battleIdInput = EventIdFromQuery;
+            selectedBattleId = battleId;
+            await OnBattleSelected(battleId);
         }
+    }
+    
+    private async Task LoadEventsAsync()
+    {
+        isLoadingEvents = true;
+        try
+        {
+            events = await EventsClient.GetEventsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading events: {ex.Message}", Severity.Error);
+            events = new List<EventResponse>();
+        }
+        finally
+        {
+            isLoadingEvents = false;
+        }
+    }
+    
+    private async Task OnEventSelected(Guid? eventId)
+    {
+        selectedEventId = eventId;
+        selectedBattleId = null;
+        currentBattle = null;
+        activeBattles = null;
+        scoreModel = new SubmitScoresViewModel();
+        authError = null;
+        scoreError = null;
+        scoreSuccess = null;
+        
+        if (eventId == null)
+        {
+            return;
+        }
+        
+        isLoadingBattles = true;
+        try
+        {
+            var scoreboard = await PublicClient.GetScoreboardAsync(eventId.Value);
+            activeBattles = scoreboard.ActiveBattles;
+            
+            if (activeBattles == null || !activeBattles.Any())
+            {
+                Snackbar.Add("No active battles found for this event", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading battles: {ex.Message}", Severity.Error);
+            activeBattles = new List<LiveBattleResponse>();
+        }
+        finally
+        {
+            isLoadingBattles = false;
+        }
+    }
+    
+    private async Task OnBattleSelected(Guid? battleId)
+    {
+        selectedBattleId = battleId;
+        currentBattle = null;
+        scoreModel = new SubmitScoresViewModel();
+        scoreError = null;
+        scoreSuccess = null;
+        
+        if (battleId == null)
+        {
+            return;
+        }
+        
+        // Auto-load the battle
+        await LoadBattleAsync(battleId.Value);
+    }
+    
+    private string GetBattleHelperText()
+    {
+        if (selectedEventId == null)
+        {
+            return "Select an event first";
+        }
+        if (isLoadingBattles)
+        {
+            return "Loading battles...";
+        }
+        if (activeBattles == null || !activeBattles.Any())
+        {
+            return "No active battles for this event";
+        }
+        return "Select a battle to score";
     }
 
     private async Task Authenticate()
     {
         authError = null;
         
-        if (string.IsNullOrWhiteSpace(battleIdInput) || !Guid.TryParse(battleIdInput, out var battleId))
+        if (selectedEventId == null)
         {
-            authError = "Please enter a valid Battle ID";
+            authError = "Please select an event";
+            return;
+        }
+        
+        if (selectedBattleId == null)
+        {
+            authError = "Please select a battle";
             return;
         }
 
@@ -267,29 +379,9 @@
         
         try
         {
-            var client = ClientFactory.CreateClient();
-            client.BaseAddress = new Uri(Navigation.BaseUri);
+            eventIdForPin = selectedEventId.Value;
             
-            // First, load battle to get the event ID
-            var battleResponse = await client.GetAsync($"/battles/{battleId}");
-            
-            if (!battleResponse.IsSuccessStatusCode)
-            {
-                authError = "Battle not found. Please check the Battle ID.";
-                return;
-            }
-            
-            var battle = await battleResponse.Content.ReadFromJsonAsync<BattleDetailResponse>();
-            if (battle == null)
-            {
-                authError = "Failed to load battle details.";
-                return;
-            }
-            
-            eventIdForPin = battle.EventId;
-            currentBattle = battle;
-            
-            // Now validate the PIN using the dedicated validation endpoint
+            // Validate the PIN using the dedicated validation endpoint
             var testClient = ClientFactory.CreateClient();
             testClient.BaseAddress = new Uri(Navigation.BaseUri);
             testClient.DefaultRequestHeaders.Add("X-Pin", judgePin);
@@ -302,7 +394,6 @@
             {
                 authError = "Invalid Judge PIN. Please check your PIN and try again.";
                 eventIdForPin = null;
-                currentBattle = null;
                 return;
             }
             
@@ -310,7 +401,6 @@
             {
                 authError = $"PIN validation failed: {pinTestResponse.StatusCode}";
                 eventIdForPin = null;
-                currentBattle = null;
                 return;
             }
             
@@ -322,7 +412,6 @@
         {
             authError = $"Authentication failed: {ex.Message}";
             eventIdForPin = null;
-            currentBattle = null;
         }
         finally
         {
@@ -330,16 +419,8 @@
         }
     }
 
-    private async Task LoadBattle()
+    private async Task LoadBattleAsync(Guid battleId)
     {
-        if (string.IsNullOrWhiteSpace(battleIdInput) || !Guid.TryParse(battleIdInput, out var battleId))
-        {
-            loadError = "Please enter a valid Battle ID";
-            return;
-        }
-
-        isLoading = true;
-        loadError = null;
         scoreSuccess = null;
         scoreError = null;
 
@@ -357,18 +438,14 @@
             }
             else
             {
-                loadError = $"Error loading battle: {response.StatusCode}";
+                Snackbar.Add($"Error loading battle: {response.StatusCode}", Severity.Error);
                 currentBattle = null;
             }
         }
         catch (Exception ex)
         {
-            loadError = $"Exception: {ex.Message}";
+            Snackbar.Add($"Error loading battle: {ex.Message}", Severity.Error);
             currentBattle = null;
-        }
-        finally
-        {
-            isLoading = false;
         }
     }
 

@@ -100,4 +100,19 @@ public class CategoriesApiClient : ApiClientBase
             adminPin,
             ct);
     }
+
+    /// <summary>
+    /// Delete a category (only if it has no registrations)
+    /// </summary>
+    public async Task DeleteCategoryAsync(
+        Guid eventId,
+        Guid categoryId,
+        string adminPin,
+        CancellationToken ct = default)
+    {
+        await DeleteAsync(
+            $"/events/{eventId}/categories/{categoryId}",
+            adminPin,
+            ct);
+    }
 }

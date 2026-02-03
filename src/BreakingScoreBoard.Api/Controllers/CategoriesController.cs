@@ -478,6 +478,71 @@ public class CategoriesController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Deletes a category and all associated data (registrations, battles, scores).
+    /// </summary>
+    /// <param name="eventId">The event ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <returns>Result of category deletion.</returns>
+    [HttpDelete("{categoryId:guid}")]
+    [RequireAdminPin]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteCategory(Guid eventId, Guid categoryId)
+    {
+        var category = await _dbContext.AgeCategories
+            .Include(c => c.Registrations)
+            .FirstOrDefaultAsync(c => c.Id == categoryId && c.EventId == eventId);
+
+        if (category is null)
+        {
+            return NotFound(ErrorResponse.FromMessage("Category not found"));
+        }
+
+        // Only allow deletion if category is in Registration phase
+        if (category.CurrentPhase != CategoryPhase.Registration)
+        {
+            return BadRequest(ErrorResponse.FromMessage("Cannot delete category - it must be in Registration phase. Reset category first."));
+        }
+
+        // Get all battles for this category to verify none exist
+        var battles = await _dbContext.Battles
+            .Include(b => b.Scores)
+            .Where(b => b.CategoryId == categoryId)
+            .ToListAsync();
+
+        // Delete battles and scores if any exist (cleanup from incomplete reset)
+        if (battles.Any())
+        {
+            _dbContext.Battles.RemoveRange(battles);
+        }
+
+        var registrationCount = category.Registrations.Count;
+        var battleCount = battles.Count;
+        var scoreCount = battles.Sum(b => b.Scores.Count);
+
+        // Delete all registrations
+        _dbContext.Registrations.RemoveRange(category.Registrations);
+
+        // Delete the category
+        _dbContext.AgeCategories.Remove(category);
+        
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Deleted category {CategoryId} from event {EventId}: {RegistrationCount} registrations, {BattleCount} battles, {ScoreCount} scores",
+            categoryId, eventId, registrationCount, battleCount, scoreCount);
+
+        return Ok(new
+        {
+            message = "Category deleted successfully",
+            registrationsDeleted = registrationCount,
+            battlesDeleted = battleCount,
+            scoresDeleted = scoreCount
+        });
+    }
+
     private static CategoryResponse MapToResponse(AgeCategory category)
     {
         var registrationCount = category.Registrations.Count;

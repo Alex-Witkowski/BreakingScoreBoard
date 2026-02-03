@@ -245,6 +245,13 @@
                                                    StartIcon="@Icons.Material.Filled.PlayArrow">
                                             Start
                                         </MudButton>
+                                        <MudButton Variant="Variant.Outlined" 
+                                                   Color="Color.Error" 
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => DeleteCategory(category))"
+                                                   StartIcon="@Icons.Material.Filled.Delete">
+                                            Delete
+                                        </MudButton>
                                     }
                                     else
                                     {
@@ -694,6 +701,52 @@
             
             await CategoriesApi.ResetCategoryAsync(eventData.Id, category.Id, adminPin);
             Snackbar.Add($"{category.Name} reset successfully", Severity.Success);
+            
+            // Clear active category if this was the active one
+            if (activeCategoryId == category.Id)
+            {
+                activeCategoryId = null;
+                nextBattle = null;
+            }
+            
+            await LoadEventData(); // Refresh data
+        }
+        catch (HttpRequestException ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+    
+    private async Task DeleteCategory(CategoryResponse category)
+    {
+        if (eventData == null) return;
+        
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Category",
+            $"Permanently delete {category.Name}? This will also delete all {category.RegistrationCount} registration(s). This action cannot be undone!",
+            yesText: "Delete", cancelText: "Cancel");
+        
+        if (confirmed != true) return;
+        
+        try
+        {
+            // Prompt for admin PIN
+            var parameters = new DialogParameters
+            {
+                ["Title"] = "Enter Admin PIN",
+                ["Message"] = "Admin PIN required to delete category"
+            };
+            
+            var pinDialog = await DialogService.ShowAsync<PinInputDialog>("Admin PIN", parameters);
+            var pinResult = await pinDialog.Result;
+            
+            if (pinResult.Canceled || pinResult.Data is not string adminPin)
+            {
+                return;
+            }
+            
+            await CategoriesApi.DeleteCategoryAsync(eventData.Id, category.Id, adminPin);
+            Snackbar.Add($"{category.Name} deleted successfully", Severity.Success);
             
             // Clear active category if this was the active one
             if (activeCategoryId == category.Id)
