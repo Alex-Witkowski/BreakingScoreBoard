@@ -275,6 +275,7 @@ public class BracketProgressionTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = name,
+            BattleName = name,
             BirthDate = birthDate
         };
 

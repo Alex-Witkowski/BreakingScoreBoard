@@ -48,6 +48,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = "B-Boy Thunder",
+            BattleName = "B-Boy Thunder",
             BirthDate = new DateOnly(2012, 5, 20) // Will be 14 at event date
         };
 
@@ -85,6 +86,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = "B-Girl Storm",
+            BattleName = "B-Girl Storm",
             BirthDate = new DateOnly(2008, 6, 1) // Will be exactly 18 at event
         };
 
@@ -112,6 +114,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = "B-Boy OG",
+            BattleName = "B-Boy OG",
             BirthDate = new DateOnly(1990, 1, 1) // Will be 36 at event
         };
 
@@ -143,6 +146,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = "B-Boy TooOld",
+            BattleName = "B-Boy TooOld",
             BirthDate = new DateOnly(2010, 1, 1) // Will be 16 at event
         };
 
@@ -170,6 +174,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = "B-Girl JustMissed",
+            BattleName = "B-Girl JustMissed",
             BirthDate = new DateOnly(2011, 12, 31) // Will be 15 at event
         };
 
@@ -193,6 +198,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = "B-Boy Future",
+            BattleName = "B-Boy Future",
             BirthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
         };
 
@@ -224,6 +230,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var firstRequest = new RegisterBreakerRequest
         {
             Name = "B-Boy Thunder",
+            BattleName = "B-Boy Thunder",
             BirthDate = new DateOnly(2012, 5, 20)
         };
 
@@ -241,6 +248,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var secondRequest = new RegisterBreakerRequest
         {
             Name = "B-Boy Thunder",
+            BattleName = "B-Boy Thunder",
             BirthDate = new DateOnly(2012, 5, 20)
         };
 
@@ -277,6 +285,7 @@ public class RegistrationsControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = "B-Boy Multi",
+            BattleName = "B-Boy Multi",
             BirthDate = new DateOnly(2012, 5, 20) // Age 14, fits both categories
         };
 

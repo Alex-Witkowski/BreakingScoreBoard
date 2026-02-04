@@ -171,6 +171,53 @@ public class PublicController : ControllerBase
         return Ok(liveBattle);
     }
 
+    /// <summary>
+    /// Gets tournament brackets showing all matchups organized by round.
+    /// </summary>
+    /// <param name="eventId">Event ID.</param>
+    /// <returns>Tournament brackets for all categories.</returns>
+    /// <response code="200">Brackets retrieved successfully</response>
+    /// <response code="404">Event not found</response>
+    [HttpGet("brackets")]
+    [ProducesResponseType(typeof(EventBracketsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetBrackets(Guid eventId)
+    {
+        var battleEvent = await _context.BattleEvents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+
+        if (battleEvent is null)
+        {
+            return NotFound(new { message = "Event not found" });
+        }
+
+        var categories = await _context.AgeCategories
+            .Include(c => c.Battles)
+                .ThenInclude(b => b.Breaker1)
+            .Include(c => c.Battles)
+                .ThenInclude(b => b.Breaker2)
+            .Include(c => c.Battles)
+                .ThenInclude(b => b.Winner)
+            .Include(c => c.Battles)
+                .ThenInclude(b => b.Scores)
+            .Where(c => c.EventId == eventId)
+            .OrderBy(c => c.SortOrder)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var categoryBrackets = categories.Select(MapToCategoryBracket).ToList();
+
+        var brackets = new EventBracketsResponse
+        {
+            EventId = eventId,
+            EventTitle = battleEvent.Title,
+            Categories = categoryBrackets
+        };
+
+        return Ok(brackets);
+    }
+
     #region Helper Methods
 
     private LiveBattleResponse MapToLiveBattle(Domain.Entities.Battle battle, int judgeCount)
@@ -302,6 +349,98 @@ public class PublicController : ControllerBase
             Losses = losses,
             AverageScore = averageScore,
             Status = registration.Status
+        };
+    }
+
+    private CategoryBracketResponse MapToCategoryBracket(Domain.Entities.AgeCategory category)
+    {
+        // Group battles by bracket level
+        var roundsDict = new Dictionary<BracketLevel, List<BracketMatchup>>();
+        
+        foreach (var battle in category.Battles)
+        {
+            if (!roundsDict.ContainsKey(battle.BracketLevel))
+            {
+                roundsDict[battle.BracketLevel] = new List<BracketMatchup>();
+            }
+
+            var matchup = MapToBracketMatchup(battle);
+            roundsDict[battle.BracketLevel].Add(matchup);
+        }
+
+        // Find champion (winner of finals)
+        var finals = category.Battles
+            .Where(b => b.BracketLevel == BracketLevel.Final && 
+                       (b.Status == BattleStatus.Completed || b.Status == BattleStatus.Walkover))
+            .FirstOrDefault();
+
+        BreakerSummary? champion = null;
+        if (finals?.Winner != null)
+        {
+            champion = new BreakerSummary
+            {
+                Id = finals.Winner.Id,
+                Name = finals.Winner.Name
+            };
+        }
+
+        return new CategoryBracketResponse
+        {
+            CategoryId = category.Id,
+            CategoryName = category.Name,
+            CurrentPhase = category.CurrentPhase,
+            Rounds = roundsDict,
+            Champion = champion
+        };
+    }
+
+    private BracketMatchup MapToBracketMatchup(Domain.Entities.Battle battle)
+    {
+        BreakerSummary? winner = null;
+        decimal? winnerAvg = null;
+        decimal? loserAvg = null;
+
+        if (battle.Status == BattleStatus.Completed || battle.Status == BattleStatus.Walkover)
+        {
+            if (battle.Winner != null)
+            {
+                winner = new BreakerSummary
+                {
+                    Id = battle.Winner.Id,
+                    Name = battle.Winner.Name
+                };
+
+                if (battle.Status == BattleStatus.Completed && battle.Scores.Any())
+                {
+                    var loser = battle.WinnerId == battle.Breaker1Id ? battle.Breaker2 : battle.Breaker1;
+                    
+                    var winnerScores = battle.Scores.Where(s => s.BreakerId == battle.WinnerId);
+                    var loserScores = battle.Scores.Where(s => s.BreakerId == loser.Id);
+
+                    winnerAvg = winnerScores.Any() ? _scoringService.CalculateAverageScore(winnerScores) : null;
+                    loserAvg = loserScores.Any() ? _scoringService.CalculateAverageScore(loserScores) : null;
+                }
+            }
+        }
+
+        return new BracketMatchup
+        {
+            BattleId = battle.Id,
+            BracketLevel = battle.BracketLevel,
+            Breaker1 = new BreakerSummary
+            {
+                Id = battle.Breaker1.Id,
+                Name = battle.Breaker1.Name
+            },
+            Breaker2 = new BreakerSummary
+            {
+                Id = battle.Breaker2.Id,
+                Name = battle.Breaker2.Name
+            },
+            Winner = winner,
+            Status = battle.Status,
+            WinnerAvgScore = winnerAvg,
+            LoserAvgScore = loserAvg
         };
     }
 

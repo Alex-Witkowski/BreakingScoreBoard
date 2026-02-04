@@ -1,0 +1,201 @@
+@using BreakingScoreBoard.Api.Contracts.Public
+@using BreakingScoreBoard.Domain.Enums
+
+<div class="bracket-container">
+    @if (CategoryBracket?.Rounds != null && CategoryBracket.Rounds.Any())
+    {
+        <!-- Event Header -->
+        <div class="bracket-event-header">
+            <div class="bracket-event-info">
+                <span class="bracket-stage">@GetBracketStage()</span>
+            </div>
+            <div class="bracket-event-logo">
+                <div class="logo-circle">
+                    <i class="bi bi-person-arms-up"></i>
+                </div>
+                <div class="event-title-block">
+                    <div class="event-subtitle">HIP HOP GRANDSLAM</div>
+                    <div class="event-title">@GetEventTitleLines()</div>
+                    <div class="event-year">@GetEventYear()</div>
+                </div>
+            </div>
+            <div class="bracket-event-category">
+                <span>@CategoryBracket.CategoryName</span>
+            </div>
+        </div>
+
+        var highestLevel = CategoryBracket.Rounds.Keys.OrderByDescending(k => (int)k).FirstOrDefault();
+        var firstRoundBattles = CategoryBracket.Rounds.ContainsKey(highestLevel) && highestLevel >= BracketLevel.Top8 
+            ? CategoryBracket.Rounds[highestLevel].OrderBy(b => b.BattleId).ToList() 
+            : new List<BracketMatchup>();
+        var top4Battles = CategoryBracket.Rounds.ContainsKey(BracketLevel.Top4) ? CategoryBracket.Rounds[BracketLevel.Top4].OrderBy(b => b.BattleId).ToList() : new List<BracketMatchup>();
+        var finalBattle = CategoryBracket.Rounds.ContainsKey(BracketLevel.Final) ? CategoryBracket.Rounds[BracketLevel.Final].FirstOrDefault() : null;
+
+        // Calculate how many matches go on each side
+        int halfwayPoint = firstRoundBattles.Count / 2;
+
+        <!-- Bracket Visualization -->
+        <div class="bracket-tree">
+            <!-- Left Side -->
+            <div class="bracket-side bracket-left">
+                <!-- Quarter Finals Left -->
+                <div class="bracket-column bracket-quarter">
+                    @for (int i = 0; i < halfwayPoint; i++)
+                    {
+                        var battle = firstRoundBattles[i];
+                        <div class="bracket-match">
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
+                                <span class="flag">🇩🇪</span>
+                                <span class="name">@(battle.Breaker1?.Name ?? "TBD")</span>
+                            </div>
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker2?.Id ? "winner" : "")">
+                                <span class="flag">🇩🇪</span>
+                                <span class="name">@(battle.Breaker2?.Name ?? "TBD")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Semi Finals Left -->
+                <div class="bracket-column bracket-semi">
+                    @if (top4Battles.Count > 0)
+                    {
+                        var battle = top4Battles[0];
+                        <div class="bracket-match">
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
+                                <span class="flag">🇩🇪</span>
+                                <span class="name">@(battle.Breaker1?.Name ?? "TBD")</span>
+                            </div>
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker2?.Id ? "winner" : "")">
+                                <span class="flag">🇩🇪</span>
+                                <span class="name">@(battle.Breaker2?.Name ?? "TBD")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Center - Champion & Final -->
+            <div class="bracket-center">
+                @if (CategoryBracket.Champion != null)
+                {
+                    <div class="champion-box">
+                        @CategoryBracket.Champion.Name
+                    </div>
+                }
+                @if (finalBattle != null)
+                {
+                    <div class="bracket-final">
+                        <div class="bracket-competitor @(finalBattle.Winner?.Id == finalBattle.Breaker1?.Id ? "winner" : "")">
+                            <span class="flag">🇩🇪</span>
+                            <span class="name">@(finalBattle.Breaker1?.Name ?? "TBD")</span>
+                        </div>
+                        <div class="bracket-competitor @(finalBattle.Winner?.Id == finalBattle.Breaker2?.Id ? "winner" : "")">
+                            <span class="flag">🇩🇪</span>
+                            <span class="name">@(finalBattle.Breaker2?.Name ?? "TBD")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Side -->
+            <div class="bracket-side bracket-right">
+                <!-- Semi Finals Right -->
+                <div class="bracket-column bracket-semi">
+                    @if (top4Battles.Count > 1)
+                    {
+                        var battle = top4Battles[1];
+                        <div class="bracket-match">
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
+                                <span class="name">@(battle.Breaker1?.Name ?? "TBD")</span>
+                                <span class="flag">🇩🇪</span>
+                            </div>
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker2?.Id ? "winner" : "")">
+                                <span class="name">@(battle.Breaker2?.Name ?? "TBD")</span>
+                                <span class="flag">🇩🇪</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Quarter Finals Right -->
+                <div class="bracket-column bracket-quarter">
+                    @for (int i = halfwayPoint; i < firstRoundBattles.Count; i++)
+                    {
+                        var battle = firstRoundBattles[i];
+                        <div class="bracket-match">
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker1?.Id ? "winner" : "")">
+                                <span class="name">@(battle.Breaker1?.Name ?? "TBD")</span>
+                                <span class="flag">🇩🇪</span>
+                            </div>
+                            <div class="bracket-competitor @(battle.Winner?.Id == battle.Breaker2?.Id ? "winner" : "")">
+                                <span class="name">@(battle.Breaker2?.Name ?? "TBD")</span>
+                                <span class="flag">🇩🇪</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-diagram-3" style="font-size: 3rem;"></i>
+            <p class="mt-3">No bracket data available</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public CategoryBracketResponse? CategoryBracket { get; set; }
+
+    [Parameter]
+    public string EventTitle { get; set; } = string.Empty;
+
+    private string GetBracketStage()
+    {
+        if (CategoryBracket?.Rounds == null || !CategoryBracket.Rounds.Any())
+            return "Tournament Bracket";
+
+        // Determine the highest level (earliest round) in the bracket
+        var highestLevel = CategoryBracket.Rounds.Keys.OrderByDescending(k => (int)k).FirstOrDefault();
+
+        return highestLevel switch
+        {
+            BracketLevel.Top64 => "TOP64 - Knock-Out",
+            BracketLevel.Top32 => "TOP32 - Knock-Out",
+            BracketLevel.Top16 => "TOP16 - Knock-Out",
+            BracketLevel.Top8 => "TOP8 - Knock-Out",
+            BracketLevel.Top4 => "TOP4 - Semi-Finals",
+            BracketLevel.Final => "Finals",
+            _ => "Tournament Bracket"
+        };
+    }
+
+    private MarkupString GetEventTitleLines()
+    {
+        if (string.IsNullOrEmpty(EventTitle))
+            return new MarkupString("TOURNAMENT<br/>BRACKET");
+
+        // Try to split title into multiple lines for better display
+        var words = EventTitle.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length >= 2)
+        {
+            var midpoint = words.Length / 2;
+            var firstLine = string.Join(" ", words.Take(midpoint)).ToUpper();
+            var secondLine = string.Join(" ", words.Skip(midpoint)).ToUpper();
+            return new MarkupString($"{firstLine}<br/>{secondLine}");
+        }
+
+        return new MarkupString(EventTitle.ToUpper());
+    }
+
+    private string GetEventYear()
+    {
+        // Extract year from event title if present, otherwise use current year
+        var yearMatch = System.Text.RegularExpressions.Regex.Match(EventTitle ?? "", @"\b(20\d{2})\b");
+        return yearMatch.Success ? yearMatch.Value : DateTime.Now.Year.ToString();
+    }
+}

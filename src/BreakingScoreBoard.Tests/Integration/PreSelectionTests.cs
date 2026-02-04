@@ -199,6 +199,7 @@ public class PreSelectionTests : IAsyncLifetime
         var registerRequest = new RegisterBreakerRequest
         {
             Name = "Late Breaker",
+            BattleName = "Late Breaker",
             BirthDate = new DateOnly(2012, 1, 1)
         };
 
@@ -270,6 +271,7 @@ public class PreSelectionTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = name,
+            BattleName = name,
             BirthDate = birthDate
         };
 

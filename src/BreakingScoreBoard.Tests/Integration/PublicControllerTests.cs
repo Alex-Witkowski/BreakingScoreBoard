@@ -248,6 +248,88 @@ public class PublicControllerTests : IAsyncLifetime
 
     #endregion
 
+    #region T098: GET /public/brackets returns tournament bracket structure
+
+    [Fact]
+    public async Task GetBrackets_ReturnsAllCategoriesWithMatchups()
+    {
+        // Arrange
+        var eventId = await CreateTestEvent();
+        var categoryId = await CreateTestCategory(eventId, name: "U14", bracketSize: 8);
+
+        // Register breakers and generate brackets
+        for (int i = 1; i <= 8; i++)
+        {
+            await RegisterBreaker(eventId, categoryId, $"Breaker{i}", new DateOnly(2012, 1, i));
+        }
+
+        // Generate brackets
+        _client.DefaultRequestHeaders.Remove("X-Pin");
+        _client.DefaultRequestHeaders.Add("X-Pin", "event123");
+        await _client.PostAsync($"/events/{eventId}/categories/{categoryId}/brackets/generate", null);
+
+        // Act: Get brackets (no authentication)
+        _client.DefaultRequestHeaders.Remove("X-Pin");
+        var response = await _client.GetAsync($"/public/events/{eventId}/brackets");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var brackets = await response.Content.ReadFromJsonAsync<EventBracketsResponse>();
+        brackets.Should().NotBeNull();
+        brackets!.EventId.Should().Be(eventId);
+        brackets.EventTitle.Should().Be("Test Battle Event");
+        brackets.Categories.Should().ContainSingle();
+
+        var category = brackets.Categories.First();
+        category.CategoryName.Should().Be("U14");
+        category.Rounds.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetBrackets_ShowsCompletedBattleWinners()
+    {
+        // Arrange: Create completed battle
+        var (eventId, categoryId, winnerId, _) = await CreateCompletedBattleScenario();
+
+        // Act
+        _client.DefaultRequestHeaders.Remove("X-Pin");
+        var response = await _client.GetAsync($"/public/events/{eventId}/brackets");
+
+        // Assert
+        var brackets = await response.Content.ReadFromJsonAsync<EventBracketsResponse>();
+        var category = brackets!.Categories.First();
+
+        // Find the battle in the rounds
+        var allMatchups = category.Rounds.Values.SelectMany(m => m).ToList();
+        allMatchups.Should().ContainSingle();
+
+        var matchup = allMatchups.First();
+        matchup.Status.Should().Be(BattleStatus.Completed);
+        matchup.Winner.Should().NotBeNull();
+        matchup.Winner!.Id.Should().Be(winnerId);
+    }
+
+    [Fact]
+    public async Task GetBrackets_WorksWithMultipleCategories()
+    {
+        // Arrange
+        var eventId = await CreateTestEvent();
+        var category1Id = await CreateTestCategory(eventId, name: "U14", bracketSize: 8);
+        var category2Id = await CreateTestCategory(eventId, name: "U18", bracketSize: 8);
+
+        // Act
+        _client.DefaultRequestHeaders.Remove("X-Pin");
+        var response = await _client.GetAsync($"/public/events/{eventId}/brackets");
+
+        // Assert
+        var brackets = await response.Content.ReadFromJsonAsync<EventBracketsResponse>();
+        brackets!.Categories.Should().HaveCount(2);
+        brackets.Categories.Select(c => c.CategoryName).Should().Contain(new[] { "U14", "U18" });
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private async Task<(Guid eventId, string eventTitle)> CreateTestEventWithBattles()
@@ -379,6 +461,7 @@ public class PublicControllerTests : IAsyncLifetime
         var request = new RegisterBreakerRequest
         {
             Name = name,
+            BattleName = name,
             BirthDate = birthDate
         };
 

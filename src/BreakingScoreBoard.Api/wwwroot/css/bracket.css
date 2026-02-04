@@ -1,0 +1,306 @@
+/* Tournament Bracket - Traditional Layout */
+
+.bracket-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    position: relative;
+    padding: 2rem;
+    min-height: 100vh;
+    overflow-x: auto;
+}
+
+/* Event Header */
+.bracket-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    margin-bottom: 3rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.bracket-event-info {
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.bracket-stage {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+}
+
+.bracket-event-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.event-title-block {
+    text-align: left;
+}
+
+.event-subtitle {
+    color: #888;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.event-title {
+    color: #ff6b35;
+    font-size: 1.8rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.event-year {
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.bracket-event-category {
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Bracket Tree Layout */
+.bracket-tree {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4rem;
+    position: relative;
+    padding: 2rem;
+}
+
+.bracket-side {
+    display: flex;
+    gap: 4rem;
+}
+
+.bracket-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 3rem;
+}
+
+/* Match Container */
+.bracket-match {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Horizontal connector from match to next round */
+.bracket-match::after {
+    content: '';
+    position: absolute;
+    right: -2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    height: 2px;
+    background: #ffffff;
+    z-index: 1;
+}
+
+.bracket-right .bracket-match::after {
+    right: auto;
+    left: -2rem;
+}
+
+/* Competitor Box */
+.bracket-competitor {
+    background: #888888;
+    color: #000000;
+    padding: 0.75rem 1.25rem;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    font-size: 1rem;
+    position: relative;
+    border-right: 4px solid #666666;
+}
+
+.bracket-right .bracket-competitor {
+    border-right: none;
+    border-left: 4px solid #666666;
+    flex-direction: row-reverse;
+}
+
+.bracket-competitor.winner {
+    background: #c8c8c8;
+    border-color: #000000;
+}
+
+.bracket-competitor .flag {
+    font-size: 1.2rem;
+}
+
+.bracket-competitor .name {
+    flex: 1;
+}
+
+/* Center Section */
+.bracket-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    justify-content: center;
+}
+
+.champion-box {
+    background: linear-gradient(135deg, #f4b942 0%, #e89b2b 100%);
+    color: #000000;
+    padding: 1.5rem 3rem;
+    font-size: 2rem;
+    font-weight: 900;
+    text-align: center;
+    min-width: 300px;
+    box-shadow: 0 8px 16px rgba(244, 185, 66, 0.4);
+}
+
+.bracket-final {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.bracket-final .bracket-competitor {
+    min-width: 250px;
+    border-left: none;
+    border-right: none;
+    justify-content: center;
+}
+
+/* Connecting Lines */
+/* Remove old generic connectors */
+
+/* Vertical connecting lines for quarters - connects pairs of matches */
+.bracket-quarter {
+    position: relative;
+}
+
+/* Vertical line connecting first two matches in quarter-finals */
+.bracket-quarter .bracket-match:nth-child(1)::before,
+.bracket-quarter .bracket-match:nth-child(3)::before {
+    content: '';
+    position: absolute;
+    right: -2rem;
+    top: 50%;
+    height: calc(100% + 3rem);
+    width: 2px;
+    background: #ffffff;
+    z-index: 0;
+}
+
+.bracket-right .bracket-quarter .bracket-match:nth-child(1)::before,
+.bracket-right .bracket-quarter .bracket-match:nth-child(3)::before {
+    right: auto;
+    left: -2rem;
+}
+
+/* Semi-finals vertical connectors */
+.bracket-semi {
+    position: relative;
+}
+
+.bracket-semi .bracket-match:first-child::before {
+    content: '';
+    position: absolute;
+    right: -2rem;
+    top: 50%;
+    height: calc(100% + 8rem);
+    width: 2px;
+    background: #ffffff;
+    z-index: 0;
+}
+
+.bracket-right .bracket-semi .bracket-match:first-child::before {
+    right: auto;
+    left: -2rem;
+}
+
+/* Semi-finals spacing */
+.bracket-semi .bracket-match:first-child {
+    margin-bottom: 6rem;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .bracket-tree {
+        transform: scale(0.85);
+        transform-origin: top center;
+    }
+}
+
+@media (max-width: 1200px) {
+    .bracket-tree {
+        transform: scale(0.7);
+    }
+    
+    .bracket-event-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .bracket-tree {
+        transform: scale(0.5);
+    }
+    
+    .bracket-container {
+        padding: 1rem;
+    }
+}
+
+/* Category Tabs - Keep existing styling */
+.category-tabs {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.category-tabs .nav-link {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    margin-right: 0.5rem;
+    border-radius: 8px 8px 0 0;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.category-tabs .nav-link:hover {
+    background: rgba(255, 165, 0, 0.1);
+    border-color: rgba(255, 165, 0, 0.5);
+}
+
+.category-tabs .nav-link.active {
+    background: linear-gradient(135deg, #ffa500, #ff8c00);
+    color: #000;
+    border-color: #ffa500;
+    font-weight: bold;
+}
